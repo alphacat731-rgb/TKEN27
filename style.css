@@ -358,3 +358,126 @@ body.mobile-mode .pack-dialog {
 .crash-content button:hover {
   background: #713b49;
 }
+
+
+/* Offline language pack manager */
+.language-modal {
+  position: fixed;
+  inset: 0;
+  z-index: 45;
+  display: grid;
+  place-items: center;
+  overflow: auto;
+  padding: 18px;
+  background: rgba(0,0,0,.84);
+}
+.language-modal[hidden] { display: none; }
+.language-dialog {
+  width: min(620px, 100%);
+  max-height: min(760px, calc(100dvh - 36px));
+  overflow: auto;
+  padding: 22px;
+  border: 1px solid #65404a;
+  background: #0b0a0d;
+  box-shadow: 0 24px 90px rgba(0,0,0,.72), 0 0 34px rgba(212,107,122,.08);
+}
+.language-dialog-top {
+  display: flex;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 9px;
+  color: #9a858d;
+  font-size: 9px;
+  letter-spacing: .12em;
+}
+#languageCurrent { color: var(--accent); }
+.language-dialog h2 {
+  margin: 19px 0 10px;
+  color: #eee7e8;
+  font-size: 15px;
+  letter-spacing: .1em;
+}
+.language-dialog p {
+  color: #aaa0a5;
+  font-size: 11px;
+  line-height: 1.7;
+}
+.language-pack-list {
+  display: grid;
+  gap: 8px;
+  margin: 18px 0;
+}
+.language-card {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 12px;
+  padding: 12px;
+  border: 1px solid #30262d;
+  background: #100e12;
+}
+.language-card.is-active { border-color: #80505b; }
+.language-card-info { display: grid; gap: 4px; min-width: 160px; flex: 1; }
+.language-card-info strong { color: #e6dce0; font-size: 12px; }
+.language-card-info span { color: #82777e; font-size: 10px; line-height: 1.5; }
+.language-card-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; }
+.language-card-actions button,
+.language-dialog-actions button {
+  min-height: 30px;
+  padding: 0 10px;
+  border: 1px solid #65404a;
+  border-radius: 0;
+  color: #eee7e8;
+  background: #42232c;
+  cursor: pointer;
+  font: inherit;
+  font-size: 9px;
+  letter-spacing: .06em;
+  text-transform: lowercase;
+}
+.language-card-actions button:hover,
+.language-dialog-actions button:hover { background: #713b49; }
+.language-badge {
+  color: #958890;
+  font-size: 8px;
+  letter-spacing: .1em;
+}
+.language-badge.is-current { color: var(--green); }
+.language-install-status {
+  padding: 10px 0;
+  border-top: 1px solid #34262e;
+  border-bottom: 1px solid #34262e;
+  color: var(--green);
+  font-size: 10px;
+  letter-spacing: .12em;
+}
+.language-progress-wrap { margin-top: 14px; }
+.language-progress-track { height: 5px; overflow: hidden; background: #292329; }
+.language-progress-track span {
+  display: block;
+  width: 0;
+  height: 100%;
+  background: var(--accent);
+  transition: width .1s linear;
+}
+.language-progress-text { margin-top: 7px; color: #968b91; font-size: 10px; }
+.language-log {
+  min-height: 36px;
+  max-height: 90px;
+  overflow: auto;
+  margin-top: 12px;
+  color: #8e9d87;
+  font-size: 10px;
+  line-height: 1.8;
+  white-space: pre-wrap;
+}
+.language-dialog-actions { display: flex; justify-content: flex-end; gap: 8px; margin-top: 15px; }
+.language-dialog-actions button { min-width: 72px; background: transparent; }
+.language-footnote { margin: 14px 0 0; color: #61585e !important; font-size: 8px !important; letter-spacing: .09em; }
+@media (max-width: 640px) {
+  .language-dialog { padding: 16px; max-height: calc(100dvh - 20px); }
+  .language-card { align-items: flex-start; }
+  .language-card-actions { width: 100%; justify-content: flex-end; }
+  .language-dialog h2 { font-size: 13px; }
+}
