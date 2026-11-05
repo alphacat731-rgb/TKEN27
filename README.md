@@ -61,6 +61,21 @@ pack uninstall
 
 The expansion pack is a local browser feature, not a network download. Browser storage can be removed by clearing the site's data, using a different browser/profile/device, or running `pack uninstall`. Simulated permissions do not change real operating-system files.
 
+
+## Language packs
+
+Run \`language\` to open the language pack manager, or use the terminal commands:
+
+- \`language list\` — list available packs and installation state
+- \`language install es\` — install Spanish (also available: \`fr\`, \`de\`, \`ja\`)
+- \`language use es\` — activate an installed pack; \`language use en\` returns to English
+- \`language status\` — show the active language and installed packs
+- \`language remove es\` — uninstall a language pack
+
+English is built in. Spanish, French, German, and Japanese are included as offline packs with a small installer UI. Installed packs and the active language persist in browser local storage across refreshes and reopening the same site in the same browser profile. Removing the active pack switches the interface back to English. Clearing browser site data removes the saved pack state.
+
+The terminal command names remain English, while the language packs localize the interface labels, command index and manual pages, selected common messages, and Token's conversational responses. Pack installation is simulated locally; no network download is performed.
+
 ## Safety / scope
 
 This is a simulated userspace running in the browser. It does not execute host operating-system commands, access local files, make network requests, or behave as a real Linux shell. File operations only affect the terminal's virtual filesystem stored in the current browser.
