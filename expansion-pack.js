@@ -458,7 +458,21 @@
       const base = window.TKEN27Shell && window.TKEN27Shell.dispatch ? window.TKEN27Shell.dispatch(["help"], "") : { output: "TKEN27 help unavailable", ok: false };
       result = { output: (base.output || "") + "\n\n" + (state.installed ? "EXPANSION PACK\n  visualizer [wave|noise|diagnostics]\n  decrypt [hint|solve ANSWER|archive|status|reset]\n  chmod / chown / perm  simulated permissions\n  patch FILE OLD => NEW   patch virtual text\n  locate TEXT / which CMD search paths and commands\n  watch [SECONDS] [system|date|uptime]\n  jobs / kill ID           background jobs\n  pack status / uninstall" : "OPTIONAL EXPANSION PACK\n  pack install   install extra terminal commands (30–120 seconds)\n  pack status    check installation state"), ok: true };
     } else if (cmd === "man") {
-      result = { output: dispatch(args[1], []).output || "No manual entry.", ok: true };
+      const pages = {
+        pack: "pack — manage the optional expansion pack\nUsage: pack install | status | uninstall. Installation takes a random 30–120 seconds and persists in this browser.",
+        visualizer: "visualizer — display simulated signal activity\nUsage: visualizer [wave|noise|diagnostics].",
+        decrypt: "decrypt — solve a ROT13 clue to unlock Token's private archive\nUsage: decrypt [hint|solve ANSWER|archive|status|reset].",
+        chmod: "chmod — store simulated permission metadata\nUsage: chmod MODE FILE. This does not change real files.",
+        chown: "chown — store simulated file ownership\nUsage: chown OWNER:GROUP FILE.",
+        perm: "perm — inspect simulated permissions\nUsage: perm [FILE].",
+        patch: "patch — replace text in a virtual file\nUsage: patch FILE OLD_TEXT => NEW_TEXT.",
+        locate: "locate — search virtual file and directory paths\nUsage: locate TEXT.",
+        which: "which — find a simulated shell command\nUsage: which COMMAND.",
+        watch: "watch — run a simulated background status watch\nUsage: watch [SECONDS] [system|date|uptime].",
+        jobs: "jobs — list active simulated background jobs\nUsage: jobs.",
+        kill: "kill — stop a simulated background job\nUsage: kill JOB_ID."
+      };
+      result = { output: pages[args[1]] || "No manual entry.", ok: true };
     } else {
       result = dispatch(cmd, args.slice(1));
     }
