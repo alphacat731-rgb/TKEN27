@@ -1179,7 +1179,7 @@
       return Object.keys(manuals).filter((name) => name.startsWith(partial));
     }
 
-    const commandNames = ["help","clear","ls","cd","pwd","cat","less","more","echo","printf","touch","write","append","mkdir","rm","rmdir","cp","mv","tree","find","head","tail","tac","nl","fold","grep","wc","sort","uniq","paste","cut","tr","rev","diff","base64","hash","calc","random","uuid","json","rot13","replace","timer","download","history","alias","unalias","export","unset","man","which","type","whoami","id","hostname","uname","date","cal","uptime","ps","top","free","df","du","env","printenv","neofetch","fortune","cowsay","token","femtanyl","about","version","reboot","exit","ping","ifconfig","seq"];
+    const commandNames = ["help","clear","ls","cd","pwd","cat","less","more","echo","printf","touch","write","append","mkdir","rm","rmdir","cp","mv","tree","find","locate","patch","head","tail","tac","nl","fold","grep","wc","sort","uniq","paste","cut","tr","rev","diff","base64","hash","calc","random","uuid","json","rot13","replace","timer","download","history","alias","unalias","export","unset","man","which","type","whoami","id","hostname","uname","date","cal","uptime","ps","top","free","df","du","env","printenv","neofetch","fortune","cowsay","token","femtanyl","about","version","reboot","exit","ping","ifconfig","seq","pack","visualizer","decrypt","chmod","chown","perm","watch","jobs","kill"];
     if (words.length <= 1 && !trailingSpace) return commandNames.filter((name) => name.startsWith(partial));
 
     const pathCommands = ["cd","ls","cat","less","more","type","touch","write","append","rm","rmdir","cp","mv","tree","find","head","tail","nl","fold","uniq","rev","cut","file","stat","du","replace","download","base64","hash","json","rot13"];
@@ -1281,7 +1281,17 @@
   terminalShell.addEventListener("click", () => input.focus());
   $("skipBoot").addEventListener("click", () => { window.clearInterval(bootTimer); bootIndex = bootLines.length; bootProgress.style.width = "100%"; showTerminal(); });
   function updateClock() { clock.textContent = new Date().toLocaleTimeString([], { hour12: false }); }
-  window.TKEN27Shell = { dispatch: dispatch };
+  window.TKEN27Shell = {
+    dispatch: dispatch,
+    recordCommand: function (line) {
+      history.push(String(line));
+      history = history.slice(-100);
+      historyIndex = history.length;
+      historySearchActive = false;
+      commandCount += 1;
+      persist();
+    }
+  };
   window.setInterval(updateClock, 1000);
   boot();
 })();
