@@ -429,7 +429,7 @@
     }
     if (cmd === "which") {
       if (!args[0]) return { output: "which: usage: which COMMAND", ok: false };
-      const commands = ["help","clear","ls","cd","pwd","cat","less","more","echo","printf","touch","write","append","mkdir","rm","rmdir","cp","mv","tree","find","head","tail","tac","nl","fold","grep","wc","sort","uniq","paste","cut","tr","rev","diff","base64","hash","calc","random","uuid","json","rot13","replace","timer","download","history","alias","unalias","export","unset","man","whoami","id","hostname","uname","date","cal","uptime","ps","top","free","df","du","env","printenv","neofetch","fortune","cowsay","token","femtanyl","about","version","reboot","exit","ping","ifconfig","seq","pack","visualizer","decrypt","chmod","chown","perm","patch","locate","which","watch","jobs","kill"];
+      const commands = ["help","clear","ls","cd","pwd","cat","less","more","echo","printf","touch","write","append","mkdir","rm","rmdir","cp","mv","tree","find","head","tail","tac","nl","fold","grep","wc","sort","uniq","paste","cut","tr","rev","diff","base64","hash","calc","random","uuid","json","rot13","replace","timer","download","history","alias","unalias","export","unset","man","whoami","id","hostname","uname","date","cal","uptime","ps","top","free","df","du","env","printenv","neofetch","fortune","cowsay","token","femtanyl","about","version","reboot","exit","ping","ifconfig","seq","pack","visualizer","decrypt","chmod","chown","perm","patch","locate","which","watch","jobs","kill","language","lang"];
       return { output: commands.includes(args[0]) ? args[0] + " is a simulated shell builtin" : args[0] + " not found", ok: true };
     }
     if (cmd === "visualizer") return visualizer(args);
