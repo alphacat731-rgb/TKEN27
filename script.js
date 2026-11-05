@@ -1175,6 +1175,18 @@
     if (command === "timer" && (words.length === 2 || trailingSpace)) {
       return ["start","stop","status","reset","lap","laps"].filter((name) => name.startsWith(partial));
     }
+    if (command === "pack" && (words.length === 2 || trailingSpace)) {
+      return ["install","status","uninstall","help"].filter((name) => name.startsWith(partial));
+    }
+    if (command === "visualizer" && (words.length === 2 || trailingSpace)) {
+      return ["wave","noise","diagnostics"].filter((name) => name.startsWith(partial));
+    }
+    if (command === "decrypt" && (words.length === 2 || trailingSpace)) {
+      return ["hint","solve","archive","status","reset"].filter((name) => name.startsWith(partial));
+    }
+    if (command === "watch" && (words.length === 2 || trailingSpace)) {
+      return ["system","date","uptime"].filter((name) => name.startsWith(partial));
+    }
     if (["man","help"].includes(command) && (words.length === 2 || trailingSpace)) {
       return Object.keys(manuals).filter((name) => name.startsWith(partial));
     }
@@ -1182,7 +1194,7 @@
     const commandNames = ["help","clear","ls","cd","pwd","cat","less","more","echo","printf","touch","write","append","mkdir","rm","rmdir","cp","mv","tree","find","locate","patch","head","tail","tac","nl","fold","grep","wc","sort","uniq","paste","cut","tr","rev","diff","base64","hash","calc","random","uuid","json","rot13","replace","timer","download","history","alias","unalias","export","unset","man","which","type","whoami","id","hostname","uname","date","cal","uptime","ps","top","free","df","du","env","printenv","neofetch","fortune","cowsay","token","femtanyl","about","version","reboot","exit","ping","ifconfig","seq","pack","visualizer","decrypt","chmod","chown","perm","watch","jobs","kill"];
     if (words.length <= 1 && !trailingSpace) return commandNames.filter((name) => name.startsWith(partial));
 
-    const pathCommands = ["cd","ls","cat","less","more","type","touch","write","append","rm","rmdir","cp","mv","tree","find","head","tail","nl","fold","uniq","rev","cut","file","stat","du","replace","download","base64","hash","json","rot13"];
+    const pathCommands = ["cd","ls","cat","less","more","type","touch","write","append","rm","rmdir","cp","mv","tree","find","locate","patch","chmod","chown","perm","head","tail","nl","fold","uniq","rev","cut","file","stat","du","replace","download","base64","hash","json","rot13"];
     const pathPart = partial.includes("/") || partial.startsWith("~");
     const wantsPath = pathCommands.includes(command) && (words.length >= 2 || trailingSpace);
     if (pathPart || wantsPath) {
