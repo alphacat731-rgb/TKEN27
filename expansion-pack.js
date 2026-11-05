@@ -396,10 +396,30 @@
       return { output: "pack: use install, status, uninstall, or help", ok: false };
     }
 
-    if (["visualizer", "decrypt", "chmod", "chown", "perm", "watch", "jobs", "kill"].includes(cmd) && !state.installed) {
+    if (["visualizer", "decrypt", "chmod", "chown", "perm", "patch", "locate", "which", "watch", "jobs", "kill"].includes(cmd) && !state.installed) {
       return { output: cmd + ": requires the TKEN27 expansion pack. Run 'pack install' first.", ok: false };
     }
 
+    if (cmd === "patch") {
+      const arrow = args.indexOf("=>");
+      if (arrow < 2 || arrow >= args.length - 1) return { output: "patch: usage: patch FILE OLD_TEXT => NEW_TEXT", ok: false };
+      const file = args[0];
+      const oldText = args.slice(1, arrow).join(" ");
+      const newText = args.slice(arrow + 1).join(" ");
+      if (!window.TKEN27Shell || typeof window.TKEN27Shell.dispatch !== "function") return { output: "patch: virtual shell interface unavailable", ok: false };
+      return window.TKEN27Shell.dispatch(["replace", file, oldText, newText], "");
+    }
+    if (cmd === "locate") {
+      const query = args.join(" ").trim();
+      if (!query) return { output: "locate: usage: locate TEXT", ok: false };
+      if (!window.TKEN27Shell || typeof window.TKEN27Shell.dispatch !== "function") return { output: "locate: virtual shell interface unavailable", ok: false };
+      return window.TKEN27Shell.dispatch(["find", "/", query], "");
+    }
+    if (cmd === "which") {
+      if (!args[0]) return { output: "which: usage: which COMMAND", ok: false };
+      const commands = ["help","clear","ls","cd","pwd","cat","less","more","echo","printf","touch","write","append","mkdir","rm","rmdir","cp","mv","tree","find","head","tail","tac","nl","fold","grep","wc","sort","uniq","paste","cut","tr","rev","diff","base64","hash","calc","random","uuid","json","rot13","replace","timer","download","history","alias","unalias","export","unset","man","whoami","id","hostname","uname","date","cal","uptime","ps","top","free","df","du","env","printenv","neofetch","fortune","cowsay","token","femtanyl","about","version","reboot","exit","ping","ifconfig","seq","pack","visualizer","decrypt","chmod","chown","perm","patch","locate","which","watch","jobs","kill"];
+      return { output: commands.includes(args[0]) ? args[0] + " is a simulated shell builtin" : args[0] + " not found", ok: true };
+    }
     if (cmd === "visualizer") return visualizer(args);
     if (cmd === "decrypt") return decrypt(args);
     if (cmd === "chmod" || cmd === "chown" || cmd === "perm") return permissionCommand(cmd, args);
@@ -420,18 +440,28 @@
     return null;
   }
 
-  const packCommands = new Set(["pack", "visualizer", "decrypt", "chmod", "chown", "perm", "watch", "jobs", "kill"]);
+  const packCommands = new Set(["pack", "visualizer", "decrypt", "chmod", "chown", "perm", "patch", "locate", "which", "watch", "jobs", "kill", "help", "man"]);
   form.addEventListener("submit", (event) => {
     const line = input.value.trim();
     if (!line) return;
     const args = parseArgs(line);
     const cmd = (args[0] || "").toLowerCase();
     if (!packCommands.has(cmd)) return;
+    if (cmd === "help" && args[1] !== "expansion" && args.length > 1) return;
+    if (cmd === "man" && !["pack","visualizer","decrypt","chmod","chown","perm","patch","locate","which","watch","jobs","kill"].includes(args[1])) return;
     event.preventDefault();
     event.stopImmediatePropagation();
     echo(line);
     input.value = "";
-    const result = dispatch(cmd, args.slice(1));
+    let result;
+    if (cmd === "help" && (args.length === 1 || args[1] === "expansion")) {
+      const base = window.TKEN27Shell && window.TKEN27Shell.dispatch ? window.TKEN27Shell.dispatch(["help"], "") : { output: "TKEN27 help unavailable", ok: false };
+      result = { output: (base.output || "") + "\n\n" + (state.installed ? "EXPANSION PACK\n  visualizer [wave|noise|diagnostics]\n  decrypt [hint|solve ANSWER|archive|status|reset]\n  chmod / chown / perm  simulated permissions\n  patch FILE OLD => NEW   patch virtual text\n  locate TEXT / which CMD search paths and commands\n  watch [SECONDS] [system|date|uptime]\n  jobs / kill ID           background jobs\n  pack status / uninstall" : "OPTIONAL EXPANSION PACK\n  pack install   install extra terminal commands (30–120 seconds)\n  pack status    check installation state"), ok: true };
+    } else if (cmd === "man") {
+      result = { output: dispatch(args[1], []).output || "No manual entry.", ok: true };
+    } else {
+      result = dispatch(cmd, args.slice(1));
+    }
     if (result && result.output) addLine(result.output, result.ok ? "" : "error");
     input.focus();
   }, true);
