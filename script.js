@@ -168,7 +168,7 @@
     bootTimer = window.setInterval(() => {
       if (bootIndex >= bootLines.length) {
         window.clearInterval(bootTimer);
-        window.setTimeout(showTerminal, reduced ? 50 : 330);
+        window.setTimeout(showTerminal, reduced ? 50 : 180);
         return;
       }
       const line = document.createElement("div");
@@ -185,16 +185,14 @@
     window.setTimeout(() => {
       bootScreen.style.display = "none";
       input.focus();
-    }, 470);
+    }, 190);
     if (!output.childNodes.length) {
       print("TKEN27 Token Shell [version 27.11]", "accent");
-      print("A small place for a very loud mascot.");
+      print("Terminal's up. Try not to break anything I might be using.");
       print("");
-      print("  /\_/\\     type 'help' for commands");
-      print(" ( o.o )    type 'token' for Token-related commands");
-      print("  > ^ <");
+      print("Type 'help' for commands. Type 'token' if you want to talk to me.");
       print("");
-      print("session ready. no real system files will be touched.", "muted");
+      print("I'm online. Don't make it weird.", "muted");
       print("");
     }
     setPrompt();
@@ -384,15 +382,15 @@
     }
     if (cmd === "neofetch") {
       return pass([
-        "      /\_/\\       token@tken27",
-        "     ( o.o )      ----------------",
-        "      > ^ <       OS: TKEN27 Token Shell",
-        "                  Kernel: 27.11-token",
-        "                  Host: browser",
-        "                  Shell: /bin/tknsh",
-        "                  Files: " + Object.keys(files).length + " virtual files",
-        "                  Mood: " + tokenMood,
-        "                  Uptime: " + Math.floor((Date.now() - sessionStart) / 1000) + " seconds"
+        "token@tken27",
+        "----------------",
+        "OS: TKEN27 Token Shell",
+        "Kernel: 27.11-token",
+        "Host: browser",
+        "Shell: /bin/tknsh",
+        "Files: " + Object.keys(files).length + " virtual files",
+        "Mood: " + tokenMood,
+        "Uptime: " + Math.floor((Date.now() - sessionStart) / 1000) + " seconds"
       ].join("\n"));
     }
     if (cmd === "ps" || cmd === "top") return pass(" PID TTY          TIME CMD\n  1 pts/0    00:00:00 tkn-init\n 27 pts/0    00:00:00 token.service\n 42 pts/0    00:00:0" + commandCount + " tknsh\n 73 pts/0    00:00:00 " + cmd);
@@ -401,41 +399,46 @@
     if (cmd === "ping") return pass("PING " + (a[0] || "tken27") + ": simulated local response\n64 bytes from tken27: seq=1 ttl=64 time=0.27 ms\n64 bytes from tken27: seq=2 ttl=64 time=0.27 ms\n--- simulation complete; no network packets were sent ---");
     if (cmd === "ifconfig" || cmd === "ip") return pass("lo: flags=73<UP,LOOPBACK,RUNNING>\n    inet 127.0.0.1  netmask 255.0.0.0\n    inet6 ::1  prefixlen 128\neth0: flags=4099<UP,BROADCAST,MULTICAST>\n    state: imaginary-but-up");
     if (cmd === "fortune") {
-      const sayings = ["the cat has root privileges. the cat will not explain why.","every crash is just an undocumented feature with dramatic timing.","back up your files. token will not.","the machine is haunted. the haunted machine is also low on disk space.","stay weird. check your permissions."];
+      const sayings = [
+        "I am not saying I caused the last crash. I am saying it was interesting.",
+        "Back up your files. I am not doing it for you.",
+        "The machine is haunted. I like it that way.",
+        "Stay weird. Check your permissions. In that order.",
+        "I read the manual. It was boring, so I improved it."
+      ];
       return pass(sayings[Math.floor(Math.random() * sayings.length)]);
     }
     if (cmd === "cowsay") {
-      const msg = argText || stdin || "meow";
-      const border = "-".repeat(Math.min(58, Math.max(4, msg.length + 2)));
-      return pass(" " + border + "\n< " + msg.slice(0, 56) + " >\n " + border + "\n        \\   /\_/\\\n         \\ ( o.o )\n            > ^ <");
+      const msg = argText || stdin || "say something interesting";
+      return pass("Token says: " + msg.slice(0, 56));
     }
     if (cmd === "token") {
       const sub = (a[0] || "help").toLowerCase();
       const responses = {
-        help: "TOKEN COMMANDS\n  token info     basic character notes\n  token look     visual design notes\n  token lore     creator notes vs fan interpretation\n  token mood     current shell mood\n  token stats    session stats\n  token songs    Femtanyl track index\n  token quote    get a tiny terminal quote\n  token pet      attempt a head pat\n  token feed     offer a snack\n  token bite     do not stand that close\n  token scream   make some noise\n  token dance    move around a little",
-        info: "TOKEN // Femtanyl's recurring mascot.\nA fictional, cat-like character used throughout the project's visual identity.\nThe design and presentation vary between artworks.",
-        look: "VISUAL READOUT\n- mostly white, cat-like body\n- large pointed ears\n- dark eyes in many illustrations\n- small fangs\n- paw-like hands / claws in some artwork\n- appearance changes between covers and drawings",
-        lore: "LORE STATUS: PARTLY UNDOCUMENTED\nThe creator has described Token as a vessel for the music.\nThe fandom wiki documents additional lore, including immortality and genderlessness,\nbut those details should not automatically be treated as creator-confirmed canon.",
-        mood: "current mood: " + tokenMood + "\nprocess state: awake, technically",
-        stats: "TOKEN SESSION STATS\ncommands processed: " + commandCount + "\nshell uptime: " + Math.floor((Date.now() - sessionStart) / 1000) + "s\ncurrent mood: " + tokenMood + "\npermanent damage: not tracked",
-        songs: "FEMTANYL TRACK INDEX\n" + files["/usr/share/femtanyl/tracks.txt"],
-        quote: ["\"you opened the terminal. the terminal opened you.\"","\"no thoughts. only buffer overflow.\"","\"be right back. becoming a warning message.\"","\"i have read the manual. i reject the manual.\""][Math.floor(Math.random() * 4)],
-        pet: " *pat pat*\nToken tolerates this. for now.",
-        feed: "snack accepted. inventory updated: 1 (imaginary)",
-        bite: "BAD IDEA. Token's little fangs connect with your hand.\nHP: -1   dignity: -5",
-        scream: "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA\n[warning] sound driver has left the chat",
-        dance: "  \\o/     \n   |     token.exe is dancing\n  / \\     [==..........]  27%"
+        help: "Oh, you want to know what I can do? Fine.\n  token info     let me introduce myself\n  token look     take a closer look at me\n  token lore     what is known about my lore\n  token mood     ask how I'm feeling\n  token stats    inspect my current session\n  token songs    show the music\n  token quote    get a random thought from me\n  token pet      try giving me a head pat\n  token feed     offer me a snack\n  token bite     find out why you should not poke me\n  token scream   make me yell\n  token dance    watch me show off",
+        info: "I'm Token. You have probably seen me around Femtanyl's artwork.\nI'm the little recurring mascot, the one people keep putting on things.\nMy design changes a bit from artwork to artwork. Keeps things interesting.",
+        look: "You're staring? Whatever. Here's the rundown:\n- mostly white, cat-like body\n- big pointed ears\n- dark eyes in a lot of illustrations\n- little fangs. Yes, they're useful.\n- sometimes I have paw-like hands or claws\n- artists change up my look. I contain multitudes.",
+        lore: "You want my lore? Don't expect a neat little biography.\nThe creator has described me as a vessel for the music.\nThe fandom wiki mentions things like immortality and genderlessness,\nbut don't go calling every fan detail confirmed canon. Even I don't have all the answers.",
+        mood: "I'm feeling " + tokenMood + ". You asked, so there.",
+        stats: "MY SESSION STATS\nYou've made me process " + commandCount + " commands.\nI've been awake for " + Math.floor((Date.now() - sessionStart) / 1000) + " seconds.\nCurrent mood: " + tokenMood + "\nPermanent damage: not telling you.",
+        songs: "Oh, you want the music? Here. Try not to lose the list.\n\n" + files["/usr/share/femtanyl/tracks.txt"],
+        quote: ["\\\"you opened the terminal. bold move.\\\"","\\\"no thoughts. just me and the infinite buffer.\\\"","\\\"brb. turning myself into a warning message.\\\"","\\\"I read the manual. I didn't like the attitude.\\\""][Math.floor(Math.random() * 4)],
+        pet: "Hey—! ...okay, that was actually pretty nice.\nYou can have one more. Don't get greedy.",
+        feed: "Oh? Snacks? You DO know how to treat me.\n*snack acquired* Inventory: 1 (imaginary, obviously).",
+        bite: "I warned you. You poked me, I bit you. That's how this works.\nYour HP: -1   Your dignity: -5. Oops.",
+        scream: "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA!\nTHERE. Happy now? My throat hurts. (It doesn't.)",
+        dance: "Look at me go. I'm absolutely nailing this.\nDance status: overclocked. Coordination: questionable. Style: 100%."
       };
-      if (sub === "mood") return pass("current mood: " + tokenMood);
+      if (sub === "mood") return pass("I'm feeling " + tokenMood + ". Could be worse. Probably.");
       if (sub === "pet") tokenMood = "mildly appeased";
       if (sub === "feed") tokenMood = "snack-focused";
       if (sub === "bite") tokenMood = "feral";
       if (sub === "dance") tokenMood = "overclocked";
       if (sub === "scream") tokenMood = "loud";
       if (responses[sub]) return pass(responses[sub]);
-      return fail("token: unknown subcommand '" + sub + "'. Try 'token help'.");
+      return fail("I don't know what '" + sub + "' is supposed to do. Try 'token help'.");
     }
-    if (cmd === "femtanyl") return pass("FEMTANYL // TRACK INDEX\n" + files["/usr/share/femtanyl/tracks.txt"] + "\n\nuse: cat /usr/share/femtanyl/tracks.txt");
+    if (cmd === "femtanyl") return pass("Oh, you want the music? Here.\n\n" + files["/usr/share/femtanyl/tracks.txt"] + "\n\nYou can also read the list with: cat /usr/share/femtanyl/tracks.txt");
     if (cmd === "about") return pass("TKEN27 is a Token-themed browser terminal.\nIt has a small virtual filesystem, command history, text tools, pipes and redirects.\nIt does not run Linux, execute programs, or access your device files.");
     if (cmd === "version") return pass("tknsh 27.11.0 (browser build)");
     if (cmd === "reboot" || cmd === "reboot-now") {
