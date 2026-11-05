@@ -293,3 +293,68 @@ body.mobile-mode .pack-dialog {
   width: min(560px, calc(100vw - 20px));
   max-height: calc(100dvh - 20px);
 }
+
+/* Simple simulated system crash screen */
+.crash-screen {
+  position: fixed;
+  inset: 0;
+  z-index: 70;
+  display: grid;
+  place-items: center;
+  overflow: auto;
+  padding: 28px;
+  color: #e7e5e8;
+  background: #08080a;
+}
+.crash-screen[hidden] { display: none; }
+.crash-content {
+  width: min(620px, 100%);
+}
+.crash-symbol {
+  margin-bottom: 26px;
+  color: #d46b7a;
+  font-size: 42px;
+  line-height: 1;
+}
+.crash-content h1 {
+  margin: 0 0 16px;
+  font-size: clamp(17px, 3vw, 23px);
+  font-weight: 600;
+  letter-spacing: .08em;
+}
+.crash-content p {
+  margin: 0 0 17px;
+  color: #aaa4aa;
+  font-size: 12px;
+  line-height: 1.7;
+}
+.crash-details {
+  margin: 25px 0 17px;
+  padding: 14px 0;
+  border-top: 1px solid #302b31;
+  border-bottom: 1px solid #302b31;
+  color: #c77a86;
+  font-size: 11px;
+  line-height: 2;
+  letter-spacing: .05em;
+}
+.crash-content .crash-note {
+  color: #777176;
+  font-size: 10px;
+}
+.crash-content button {
+  margin-top: 16px;
+  min-height: 36px;
+  padding: 0 15px;
+  border: 1px solid #81505b;
+  border-radius: 0;
+  color: #f0e8eb;
+  background: #572d37;
+  cursor: pointer;
+  font-size: 10px;
+  letter-spacing: .08em;
+  text-transform: lowercase;
+}
+.crash-content button:hover {
+  background: #713b49;
+}
