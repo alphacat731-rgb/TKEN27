@@ -259,7 +259,7 @@
         }
         rows.push(line);
       }
-      row.textContent = " /dev/token :: " + mode.toUpperCase() + " \n" + rows.join("\n") + "\n frame " + String(frame).padStart(3, "0") + "  |  CTRL+C is not required; wait for the signal to settle";
+      row.textContent = " /dev/token :: " + mode.toUpperCase() + " \n" + rows.join("\n") + "\n frame " + String(frame).padStart(3, "0") + "  |  auto-stops after 7 seconds";
       screen.scrollTop = screen.scrollHeight;
       frame += 1;
     };
@@ -452,6 +452,9 @@
     event.preventDefault();
     event.stopImmediatePropagation();
     echo(line);
+    if (window.TKEN27Shell && typeof window.TKEN27Shell.recordCommand === "function") {
+      window.TKEN27Shell.recordCommand(line);
+    }
     input.value = "";
     let result;
     if (cmd === "help" && (args.length === 1 || args[1] === "expansion")) {
