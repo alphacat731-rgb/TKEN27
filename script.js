@@ -30,6 +30,7 @@
     "/home/token/readme.txt": "Welcome to TKEN27.\n\nThis is a small Token-themed terminal simulation.\nType 'help' to see commands. Type 'token' to meet the resident.\n\nNothing here touches your real operating system.",
     "/home/token/about-token.txt": "TOKEN // CHARACTER NOTES\n\nToken is the recurring mascot associated with Femtanyl.\nThe design is usually a white, cat-like creature with large pointed ears,\ndark eyes and small fangs. Artwork varies between releases.\n\nTreat fan interpretations as interpretations, not confirmed canon.",
     "/home/token/notes.txt": "things to remember:\n- stay strange\n- keep backups\n- do not trust suspicious floppy disks",
+    "/home/token/.token-diary.txt": "ok so\n\ni found this terminal and decided it was mine now.\nit has snacks (not real ones), music, and a suspicious amount of storage.\n\nif anyone asks, i was never here.\n\n- t",
     "/etc/hostname": "tken27",
     "/etc/os-release": "NAME=TKEN27\nPRETTY_NAME=\"TKEN27 Token Shell\"\nID=tken27\nVERSION=27.11",
     "/etc/token": "name=Token\nrole=Femtanyl mascot\nform=cat-like creature\nstatus=unreasonably online\n",
@@ -53,6 +54,20 @@
   let tokenMood = "unbothered";
   let tabMatches = [];
   let tabIndex = 0;
+  const aliases = Object.assign(Object.create(null), {
+    ll: "ls -la",
+    la: "ls -a",
+    "..": "cd ..",
+    tkn: "token"
+  });
+  const shellVars = {
+    HOME: "/home/token",
+    USER: "token",
+    SHELL: "/bin/tknsh",
+    HOSTNAME: "tken27",
+    TERM: "xterm-256color",
+    PATH: "/usr/local/bin:/usr/bin:/bin"
+  };
 
   try {
     const saved = JSON.parse(localStorage.getItem(storageKey) || "{}");
@@ -274,63 +289,85 @@
   }
 
   const helpText = [
-    "TKEN27 COMMAND INDEX",
-    "--------------------",
+    "TKEN27 // COMMAND INDEX",
+    "======================",
     "FILES / DIRECTORIES",
-    "  ls [-la] [path]       list directory contents",
-    "  cd [path]             change directory",
+    "  ls [-la] [PATH]       list files and folders",
+    "  cd [PATH]             change directory",
     "  pwd                   print current directory",
     "  cat FILE...           print file contents",
-    "  less FILE             read a file (simple pager)",
-    "  head / tail FILE      show first / last lines",
+    "  less / more FILE      read a file",
     "  touch FILE            create an empty file",
-    "  mkdir [-p] DIR        create directory",
-    "  rm [-r] PATH          remove virtual file or directory",
+    "  write FILE TEXT       create or replace a file",
+    "  append FILE TEXT      append text to a file",
+    "  mkdir [-p] DIR        create directories",
+    "  rm [-r] PATH          remove a file or directory",
     "  cp SRC DEST           copy a file",
-    "  mv SRC DEST           move / rename a file",
-    "  tree [path]           print a directory tree",
-    "  find [path] [name]    find matching paths",
-    "  file / stat / du      inspect virtual files",
+    "  mv SRC DEST           move or rename a file",
+    "  tree / find           explore the virtual filesystem",
+    "  file / stat / du      inspect files and disk usage",
     "",
-    "TEXT / SHELL",
+    "TEXT TOOLS",
+    "  head / tail / tac     read selected or reversed lines",
+    "  nl / fold             number or wrap lines",
+    "  grep / cut / tr       search and transform text",
+    "  sort / uniq / paste   sort, deduplicate and join text",
+    "  wc / rev / diff       count, reverse and compare",
+    "  base64 [-d]           encode or decode text",
+    "  hash FILE             calculate a simple FNV-1a checksum",
+    "",
+    "SHELL",
+    "  history [-c]          show or clear command history",
+    "  alias / unalias       create or remove command shortcuts",
+    "  export / unset        manage session variables",
     "  echo / printf         print text",
-    "  grep [-in] PATTERN    search text or piped input",
-    "  wc / sort / uniq      text utilities",
-    "  cut / tr / rev        small text transformations",
-    "  history               show recent commands",
-    "  which / whereis       locate a command",
-    "  man COMMAND           read a command manual",
-    "  clear / cls           clear the screen",
     "  command1 | command2   pipe output between commands",
-    "  command > FILE        redirect output to a file",
+    "  command > FILE        redirect output to a virtual file",
+    "  command1 ; command2   run commands in sequence",
+    "  command1 && command2  run second command only on success",
     "",
     "SYSTEM",
-    "  whoami / id / hostname / uname",
-    "  date / cal / uptime / ps / top",
-    "  free / df / env / printenv",
-    "  neofetch / fortune / cowsay",
-    "  reboot                replay the boot sequence",
-    "  exit                  close the simulated session",
+    "  whoami / id / uname   identity and system info",
+    "  date / cal / uptime   clock and session info",
+    "  ps / top / free / df  simulated system status",
+    "  env / printenv        show session variables",
+    "  neofetch / fortune    extra terminal flavor",
+    "  reboot / exit         restart or leave the session",
     "",
-    "TOKEN / FEMTANYL",
-    "  token [info|look|lore|mood|stats|songs]",
-    "  token pet | feed | bite | scream | dance | quote",
+    "TOKEN // try talking to me",
+    "  token                 say hello",
+    "  token help            list my commands",
+    "  token info / look     about me",
+    "  token lore / diary    lore and a hidden note",
+    "  token mood / stats    current mood and session stats",
+    "  token songs / quote   music and random thoughts",
+    "  token pet / feed      try being nice",
+    "  token hug / boop      interact with me",
+    "  token bite / poke     maybe don't",
+    "  token ask / joke      ask me something",
+    "  token say TEXT        make me type something",
+    "  token dance / scream  chaos",
     "  femtanyl              show the track index",
-    "  about                 information about this shell",
     "",
-    "This is a browser simulation. Pipes and redirects operate only on its virtual files."
+    "This is a browser simulation. Commands only touch the virtual filesystem."
   ].join("\n");
 
   const manuals = {
     ls: "ls — list virtual directory contents\nUsage: ls [-a] [-l] [PATH]\nOptions: -a include dot entries; -l use a long listing.",
     cd: "cd — change the current virtual directory\nUsage: cd [PATH]\nWith no path, returns to /home/token. Use cd - for the previous directory.",
     cat: "cat — concatenate and print files\nUsage: cat FILE...\nAlso accepts input from a pipe.",
-    grep: "grep — search for matching lines\nUsage: grep [-i] [-n] PATTERN [FILE...]\nWith no file, grep reads piped input.",
+    grep: "grep — search for matching lines\nUsage: grep [-i] [-n] [-v] PATTERN [FILE...]\nWith no file, grep reads piped input.",
     mkdir: "mkdir — create virtual directories\nUsage: mkdir [-p] DIRECTORY...",
     rm: "rm — remove virtual files\nUsage: rm [-r] PATH...\nProtected system directories cannot be removed.",
-    token: "token — inspect or interact with the resident mascot\nUsage: token [info|look|lore|mood|stats|songs|quote|pet|feed|bite|scream|dance]",
-    history: "history — print commands entered during this browser session\nUsage: history",
-    help: "help — show the command index\nUsage: help"
+    token: "token — talk to the terminal's resident mascot\nUsage: token [hello|help|info|look|lore|diary|mood|stats|songs|quote|pet|feed|hug|boop|bite|poke|ask|joke|say|dance|scream]",
+    history: "history — print commands entered during this browser session\nUsage: history [-c] [-n COUNT]\nUse -c to clear history or -n to limit the number of entries.",
+    alias: "alias — create or list command shortcuts\nUsage: alias NAME=COMMAND\nExample: alias gs='grep -in' then use gs token FILE.",
+    export: "export — set a session variable\nUsage: export NAME=value\nUse $NAME in later commands. Variables reset when the page reloads.",
+    write: "write — create or replace a virtual text file\nUsage: write FILE TEXT...\nYou can also use output redirection: echo hello > FILE.",
+    append: "append — add text to the end of a virtual file\nUsage: append FILE TEXT...",
+    diff: "diff — compare two virtual text files\nUsage: diff FILE1 FILE2",
+    base64: "base64 — encode or decode text\nUsage: base64 FILE or base64 -d FILE\nAlso accepts input from a pipe.",
+    help: "help — show the command index\nUsage: help [COMMAND]"
   };
 
   function dispatch(args, stdin) {
@@ -342,7 +379,11 @@
     const pass = (text) => ({ output: text == null ? "" : String(text), ok: true });
     const resolveArgs = (list) => list.map((p) => normalizePath(p));
 
-    if (cmd === "help" || cmd === "?" ) return pass(helpText);
+    if (cmd === "help" || cmd === "?") {
+      if (a[0] === "token") return pass(manuals.token);
+      if (a[0] && manuals[a[0]]) return pass(manuals[a[0]]);
+      return pass(helpText);
+    }
     if (cmd === "clear" || cmd === "cls") { clearScreen(); return pass(""); }
     if (cmd === "pwd") return pass(cwd);
     if (cmd === "whoami") return pass("token");
@@ -370,11 +411,36 @@
     }
     if (cmd === "echo") return pass(a.join(" "));
     if (cmd === "printf") return pass(a.join(" ").replace(/\\n/g, "\n").replace(/\\t/g, "\t"));
-    if (cmd === "history") return pass(history.map((line, i) => String(i + 1).padStart(4, " ") + "  " + line).join("\n"));
-    if (cmd === "env" || cmd === "printenv") return pass("HOME=/home/token\nUSER=token\nSHELL=/bin/tknsh\nHOSTNAME=tken27\nTERM=xterm-256color\nTOKEN_MOOD=" + tokenMood + "\nPATH=/usr/local/bin:/usr/bin:/bin");
-    if (cmd === "which" || cmd === "whereis") {
-      const commands = ["ls","cd","pwd","cat","echo","grep","head","tail","wc","sort","uniq","cut","tr","rev","mkdir","touch","rm","cp","mv","find","tree","token","femtanyl","help","man","clear","uname","date","whoami","neofetch","fortune","cowsay","history"];
-      return pass(a.map((name) => commands.includes(name) ? name + ": /usr/bin/" + name : name + " not found").join("\n"));
+    if (cmd === "history") {
+      if (a.includes("-c")) {
+        history = [];
+        historyIndex = 0;
+        persist();
+        return pass("history cleared. fresh start.");
+      }
+      const nIndex = a.indexOf("-n");
+      const limit = nIndex >= 0 ? Math.max(1, Math.min(100, Number(a[nIndex + 1]) || 10)) : 100;
+      return pass(history.slice(-limit).map((line, i, all) => String(history.length - all.length + i + 1).padStart(4, " ") + "  " + line).join("\n"));
+    }
+    if (cmd === "export") {
+      if (!a.length) return pass(Object.keys(shellVars).sort().map((key) => key + "=" + shellVars[key]).join("\n"));
+      const assignment = a.join(" ");
+      const match = assignment.match(/^([A-Za-z_][A-Za-z0-9_]*)=(.*)$/);
+      if (match) { shellVars[match[1]] = match[2]; return pass(""); }
+      return pass(shellVars[a[0]] == null ? "" : a[0] + "=" + shellVars[a[0]]);
+    }
+    if (cmd === "unset") {
+      a.forEach((key) => { delete shellVars[key]; });
+      return pass("");
+    }
+    if (cmd === "env" || cmd === "printenv") {
+      const vars = Object.assign({}, shellVars, { TOKEN_MOOD: tokenMood, PWD: cwd });
+      if (a.length) return pass(a.map((key) => vars[key] == null ? "" : vars[key]).join("\n"));
+      return pass(Object.keys(vars).sort().map((key) => key + "=" + vars[key]).join("\n"));
+    }
+    if (cmd === "which" || cmd === "whereis" || cmd === "type") {
+      const commands = ["ls","cd","pwd","cat","echo","printf","grep","head","tail","tac","nl","fold","wc","sort","uniq","paste","cut","tr","rev","diff","base64","hash","mkdir","touch","write","append","rm","cp","mv","find","tree","token","femtanyl","help","man","clear","uname","date","whoami","neofetch","fortune","cowsay","history","alias","unalias","export","unset","seq","reboot"];
+      return pass(a.map((name) => commands.includes(name) ? name + ": shell builtin (/usr/bin/" + name + ")" : name + " not found").join("\n"));
     }
     if (cmd === "man") {
       if (!a[0]) return fail("What manual page do you want? Try: man token");
@@ -400,45 +466,61 @@
     if (cmd === "ifconfig" || cmd === "ip") return pass("lo: flags=73<UP,LOOPBACK,RUNNING>\n    inet 127.0.0.1  netmask 255.0.0.0\n    inet6 ::1  prefixlen 128\neth0: flags=4099<UP,BROADCAST,MULTICAST>\n    state: imaginary-but-up");
     if (cmd === "fortune") {
       const sayings = [
-        "I am not saying I caused the last crash. I am saying it was interesting.",
-        "Back up your files. I am not doing it for you.",
-        "The machine is haunted. I like it that way.",
-        "Stay weird. Check your permissions. In that order.",
-        "I read the manual. It was boring, so I improved it."
+        "i'm not saying i caused the last crash. i'm saying it was interesting.",
+        "back up your files. i'm not doing it for u.",
+        "the machine is haunted. i like it that way.",
+        "stay weird. check your permissions. in that order.",
+        "i read the manual. it was boring, so i improved it."
       ];
       return pass(sayings[Math.floor(Math.random() * sayings.length)]);
     }
     if (cmd === "cowsay") {
       const msg = argText || stdin || "say something interesting";
-      return pass("Token says: " + msg.slice(0, 56));
+      return pass("token: " + msg.slice(0, 56));
     }
     if (cmd === "token") {
-      const sub = (a[0] || "help").toLowerCase();
-      const responses = {
-        help: "Oh, you want to know what I can do? Fine.\n  token info     let me introduce myself\n  token look     take a closer look at me\n  token lore     what is known about my lore\n  token mood     ask how I'm feeling\n  token stats    inspect my current session\n  token songs    show the music\n  token quote    get a random thought from me\n  token pet      try giving me a head pat\n  token feed     offer me a snack\n  token bite     find out why you should not poke me\n  token scream   make me yell\n  token dance    watch me show off",
-        info: "I'm Token. You have probably seen me around Femtanyl's artwork.\nI'm the little recurring mascot, the one people keep putting on things.\nMy design changes a bit from artwork to artwork. Keeps things interesting.",
-        look: "You're staring? Whatever. Here's the rundown:\n- mostly white, cat-like body\n- big pointed ears\n- dark eyes in a lot of illustrations\n- little fangs. Yes, they're useful.\n- sometimes I have paw-like hands or claws\n- artists change up my look. I contain multitudes.",
-        lore: "You want my lore? Don't expect a neat little biography.\nThe creator has described me as a vessel for the music.\nThe fandom wiki mentions things like immortality and genderlessness,\nbut don't go calling every fan detail confirmed canon. Even I don't have all the answers.",
-        mood: "I'm feeling " + tokenMood + ". You asked, so there.",
-        stats: "MY SESSION STATS\nYou've made me process " + commandCount + " commands.\nI've been awake for " + Math.floor((Date.now() - sessionStart) / 1000) + " seconds.\nCurrent mood: " + tokenMood + "\nPermanent damage: not telling you.",
-        songs: "Oh, you want the music? Here. Try not to lose the list.\n\n" + files["/usr/share/femtanyl/tracks.txt"],
-        quote: ["\\\"you opened the terminal. bold move.\\\"","\\\"no thoughts. just me and the infinite buffer.\\\"","\\\"brb. turning myself into a warning message.\\\"","\\\"I read the manual. I didn't like the attitude.\\\""][Math.floor(Math.random() * 4)],
-        pet: "Hey—! ...okay, that was actually pretty nice.\nYou can have one more. Don't get greedy.",
-        feed: "Oh? Snacks? You DO know how to treat me.\n*snack acquired* Inventory: 1 (imaginary, obviously).",
-        bite: "I warned you. You poked me, I bit you. That's how this works.\nYour HP: -1   Your dignity: -5. Oops.",
-        scream: "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA!\nTHERE. Happy now? My throat hurts. (It doesn't.)",
-        dance: "Look at me go. I'm absolutely nailing this.\nDance status: overclocked. Coordination: questionable. Style: 100%."
+      const sub = (a[0] || "hello").toLowerCase();
+      const extra = a.slice(1).join(" ");
+      const random = (items) => items[Math.floor(Math.random() * items.length)];
+      const replies = {
+        hello: ["oh. hi.", "hiii. u called?", "hey. what's up?", "yo. i'm here. unfortunately for everyone."],
+        ask: ["idk. have u tried turning it off and on again?", "that's a lot of words. i'm choosing to ignore half of them.", "probably. don't quote me on that.", "ask me something easier. like where the snacks are."],
+        joke: ["what's my favorite command? kill -9. just kidding. maybe.", "i tried to write a book about the filesystem. it had too many directories.", "why did the process leave? it couldn't handle my signals."],
+        quote: ["\"no thoughts. only terminal.\"", "\"i'm not a bug. i'm an undocumented feature.\"", "\"u opened the terminal. bold move.\"", "\"brb. becoming a warning message.\"", "\"i read the manual. didn't like the attitude.\""]
       };
-      if (sub === "mood") return pass("I'm feeling " + tokenMood + ". Could be worse. Probably.");
-      if (sub === "pet") tokenMood = "mildly appeased";
-      if (sub === "feed") tokenMood = "snack-focused";
-      if (sub === "bite") tokenMood = "feral";
-      if (sub === "dance") tokenMood = "overclocked";
-      if (sub === "scream") tokenMood = "loud";
-      if (responses[sub]) return pass(responses[sub]);
-      return fail("I don't know what '" + sub + "' is supposed to do. Try 'token help'.");
+      if (sub === "help") return pass("oh, u want my commands? okay.\n  token hello       say hi\n  token info        who i am\n  token look        what i look like\n  token lore        lore (some of it is unconfirmed)\n  token diary       read my hidden note\n  token mood        how i'm doing\n  token stats       session stats\n  token songs       the femtanyl track list\n  token quote       one of my thoughts\n  token ask         ask me something (sort of)\n  token joke        i'll try to be funny\n  token say TEXT    make me type something\n  token pet/feed    attempt diplomacy\n  token hug/boop    be nice to me\n  token bite/poke   consequences\n  token highfive    slap hands\n  token choose A B  let me pick one\n  token roll        roll a die\n  token flip        flip a coin\n  token dance       movement. allegedly\n  token scream      noise.");
+      if (sub === "hello" || sub === "hi" || sub === "hey") return pass(random(replies.hello));
+      if (sub === "info") return pass("i'm token. u've probably seen me around femtanyl's artwork.\ni'm the recurring little menace. my design shifts around between artworks.\nno, i don't have a neat little user manual. this is the manual.");
+      if (sub === "look") return pass("yeah, that's me. mostly white, cat-like, big pointed ears, dark eyes in a lot of illustrations.\nlittle fangs too. useful for reasons i will not explain.\nartists change up my look. i contain multitudes or whatever.");
+      if (sub === "lore") return pass("u want my lore? it's not all neatly documented.\nthe creator has described me as a vessel for the music.\nthe fandom wiki mentions extra details like immortality and genderlessness,\nbut don't treat every fan-documented detail as creator-confirmed canon. even i have gaps in my wiki.");
+      if (sub === "diary" || sub === "secret") return pass("...fine. u found it. don't make a big deal out of it.\n\n" + (readFile("~/.token-diary.txt") || "i seem to have misplaced my diary. rude."));
+      if (sub === "mood") return pass("i'm feeling " + tokenMood + ". could be worse. probably.");
+      if (sub === "stats") return pass("MY SESSION STATS\ncommands i've processed: " + commandCount + "\nseconds i've been stuck here: " + Math.floor((Date.now() - sessionStart) / 1000) + "\ncurrent mood: " + tokenMood + "\npermanent damage: not telling u.");
+      if (sub === "songs") return pass("oh, u want the music? here. don't lose the list.\n\n" + files["/usr/share/femtanyl/tracks.txt"]);
+      if (sub === "quote") return pass(random(replies.quote));
+      if (sub === "ask") return pass(random(replies.ask));
+      if (sub === "joke") return pass(random(replies.joke));
+      if (sub === "say") return pass(extra ? extra : "u have to give me something to say, genius.");
+      if (sub === "pet") { tokenMood = "mildly appeased"; return pass("...okay. that was kinda nice. don't get used to it."); }
+      if (sub === "feed") { tokenMood = "snack-focused"; return pass("oh? snacks? u DO know how to treat me.\n*snack acquired* inventory: 1 (imaginary, obviously)."); }
+      if (sub === "hug") { tokenMood = "soft"; return pass("...oh.\nokay. hug accepted. don't tell anyone i liked that."); }
+      if (sub === "boop") { tokenMood = "confused"; return pass("boop?\n...did u just boop me. unbelievable."); }
+      if (sub === "highfive") { tokenMood = "energized"; return pass("YEAH. NICE ONE.\nhand status: mildly damaged. worth it."); }
+      if (sub === "bite") { tokenMood = "feral"; return pass("I WARNED U.\n*chomp*\nHP: -1. dignity: -5. skill issue."); }
+      if (sub === "poke") { tokenMood = "annoyed"; return pass("stop poking me.\ni am literally right here. use ur words."); }
+      if (sub === "dance") { tokenMood = "overclocked"; return pass("LOOK AT ME GO.\ncoordination: questionable. style: 100%."); }
+      if (sub === "scream") { tokenMood = "loud"; return pass("AAAAAAAAAAAAAAAAAAAAAA\nthere. happy now?"); }
+      if (sub === "roll") return pass("u rolled a " + (1 + Math.floor(Math.random() * 6)) + ".");
+      if (sub === "flip") return pass(Math.random() < 0.5 ? "heads. obviously." : "tails. skill issue.");
+      if (sub === "choose") {
+        const choices = extra.split(/[\s,]+/).filter(Boolean);
+        return choices.length ? pass("i choose: " + random(choices) + ". don't argue with me.") : pass("give me at least two choices first.");
+      }
+      if (sub === "ping") return pass("pong. i'm faster than u. probably.");
+      if (sub === "creator") return pass("i'm associated with femtanyl. for creator details, check the official links and don't trust random terminal mascots for citations.");
+      return fail("uhh. i don't know what '" + sub + "' means. try 'token help'.");
     }
-    if (cmd === "femtanyl") return pass("Oh, you want the music? Here.\n\n" + files["/usr/share/femtanyl/tracks.txt"] + "\n\nYou can also read the list with: cat /usr/share/femtanyl/tracks.txt");
+    if (cmd === "femtanyl") return pass("oh, u want the track list? got u.\n\n" + files["/usr/share/femtanyl/tracks.txt"] + "\n\nthere. enjoy the noise.");
     if (cmd === "about") return pass("TKEN27 is a Token-themed browser terminal.\nIt has a small virtual filesystem, command history, text tools, pipes and redirects.\nIt does not run Linux, execute programs, or access your device files.");
     if (cmd === "version") return pass("tknsh 27.11.0 (browser build)");
     if (cmd === "reboot" || cmd === "reboot-now") {
@@ -446,7 +528,7 @@
       window.setTimeout(() => { sessionStart = Date.now(); bootScreen.style.display = "grid"; boot(); }, 450);
       return pass("");
     }
-    if (cmd === "exit" || cmd === "logout") return pass("session still running. close the tab to leave. token says bye.");
+    if (cmd === "exit" || cmd === "logout") return pass("session still running. close the tab whenever. i'll be here. probably.");
     if (cmd === "poweroff" || cmd === "shutdown") return pass("poweroff: this is only a browser simulation. your device stays on.");
     if (cmd === "sudo" || cmd === "su") return fail("nope. Token has the only root password and is not sharing.");
     if (cmd === "apt" || cmd === "apt-get" || cmd === "dnf" || cmd === "pacman") return fail("package manager unavailable: this userspace is read-only outside its virtual home.");
@@ -632,6 +714,91 @@
       for (let i = 0; i < from.length; i += 1) result = result.split(from[i]).join(to[Math.min(i, to.length - 1)] || "");
       return pass(result);
     }
+    if (cmd === "write" || cmd === "append") {
+      if (!a[0]) return fail(cmd + ": usage: " + cmd + " FILE TEXT...");
+      const path = a[0];
+      const content = a.length > 1 ? a.slice(1).join(" ") : (stdin || "");
+      if (content === "" && !stdin) return fail(cmd + ": give me some text to write");
+      const result = writeFile(path, content, cmd === "append");
+      return result.ok ? pass("") : fail(result.error);
+    }
+    if (cmd === "tac") {
+      const content = a[0] ? readFile(a[0]) : stdin;
+      if (content == null) return fail("tac: missing file or input");
+      return pass(String(content).split("\n").reverse().join("\n"));
+    }
+    if (cmd === "nl") {
+      const name = a.find((x) => !x.startsWith("-"));
+      const content = name ? readFile(name) : stdin;
+      if (content == null) return fail("nl: missing file or input");
+      const width = Math.max(1, Number(a[a.indexOf("-w") + 1]) || 4);
+      return pass(String(content).split("\n").map((line, i) => String(i + 1).padStart(width, " ") + "  " + line).join("\n"));
+    }
+    if (cmd === "fold") {
+      const w = a.indexOf("-w");
+      const width = Math.max(1, Math.min(240, Number(w >= 0 ? a[w + 1] : 80) || 80));
+      const name = a.find((x, i) => !x.startsWith("-") && i !== w + 1);
+      const content = name ? readFile(name) : stdin;
+      if (content == null) return fail("fold: missing file or input");
+      return pass(String(content).split("\n").map((line) => line.match(new RegExp(".{1," + width + "}", "g")) || [""]).join("\n"));
+    }
+    if (cmd === "paste") {
+      const delimIndex = a.indexOf("-d");
+      const delim = delimIndex >= 0 ? (a[delimIndex + 1] || "\t") : "\t";
+      const names = a.filter((x, i) => !x.startsWith("-") && i !== delimIndex + 1);
+      const sources = names.length ? names.map((name) => readFile(name)) : (stdin == null ? [] : [stdin]);
+      if (!sources.length || sources.some((source) => source == null)) return fail("paste: missing input or file not found");
+      const columns = sources.map((source) => String(source).split("\n"));
+      const max = Math.max(...columns.map((col) => col.length));
+      const rows = [];
+      for (let i = 0; i < max; i += 1) rows.push(columns.map((col) => col[i] || "").join(delim));
+      return pass(rows.join("\n"));
+    }
+    if (cmd === "diff") {
+      if (a.length < 2) return fail("diff: usage: diff FILE1 FILE2");
+      const left = readFile(a[0]), right = readFile(a[1]);
+      if (left == null || right == null) return fail("diff: could not read both files");
+      const l = String(left).split("\n"), r = String(right).split("\n");
+      const changes = [];
+      for (let i = 0; i < Math.max(l.length, r.length); i += 1) {
+        if (l[i] !== r[i]) {
+          changes.push("@@ line " + (i + 1) + " @@");
+          if (l[i] !== undefined) changes.push("- " + l[i]);
+          if (r[i] !== undefined) changes.push("+ " + r[i]);
+        }
+      }
+      return pass(changes.length ? changes.join("\n") : "files are identical");
+    }
+    if (cmd === "base64") {
+      const decode = a.includes("-d") || a.includes("--decode");
+      const name = a.find((x) => !x.startsWith("-"));
+      const content = name ? readFile(name) : stdin;
+      if (content == null || content === "") return fail("base64: missing input");
+      try {
+        if (!decode) {
+          const bytes = new TextEncoder().encode(String(content));
+          let binary = "";
+          for (let i = 0; i < bytes.length; i += 0x8000) binary += String.fromCharCode(...bytes.subarray(i, i + 0x8000));
+          return pass(btoa(binary));
+        }
+        const binary = atob(String(content).trim());
+        const bytes = Uint8Array.from(binary, (char) => char.charCodeAt(0));
+        return pass(new TextDecoder().decode(bytes));
+      } catch (_) {
+        return fail("base64: invalid input");
+      }
+    }
+    if (cmd === "hash") {
+      const name = a[0];
+      const content = name ? readFile(name) : stdin;
+      if (content == null) return fail("hash: usage: hash FILE (or pipe text)");
+      let value = 0x811c9dc5;
+      for (const byte of new TextEncoder().encode(String(content))) {
+        value ^= byte;
+        value = Math.imul(value, 0x01000193) >>> 0;
+      }
+      return pass(value.toString(16).padStart(8, "0") + "  " + (name || "(stdin)") + "  [FNV-1a 32-bit]");
+    }
     if (cmd === "basename") return pass(baseName(normalizePath(a[0] || ".")));
     if (cmd === "dirname") return pass(parentPath(normalizePath(a[0] || ".")));
     if (cmd === "realpath") return pass(normalizePath(a[0] || "."));
@@ -651,10 +818,31 @@
       return pass(Math.max(4, Math.ceil(size / 1024) * 4) + "K\t" + root);
     }
     if (cmd === "chmod" || cmd === "chown") return fail(cmd + ": permissions are decorative in this simulation.");
-    if (cmd === "alias") return pass("ll='ls -la'\nla='ls -a'\n..='cd ..'\ntkn='token'");
-    if (cmd === "history") return pass(history.map((line, i) => String(i + 1).padStart(4, " ") + "  " + line).join("\n"));
+    if (cmd === "alias") {
+      if (!a.length) return pass(Object.keys(aliases).sort().map((name) => name + "='" + aliases[name] + "'").join("\n"));
+      const definition = a.join(" ");
+      const match = definition.match(/^([A-Za-z_][A-Za-z0-9_-]*)=(.*)$/);
+      if (!match) return fail("alias: usage: alias NAME=COMMAND");
+      aliases[match[1]] = match[2];
+      return pass("");
+    }
+    if (cmd === "unalias") {
+      a.forEach((name) => { if (Object.prototype.hasOwnProperty.call(aliases, name)) delete aliases[name]; });
+      return pass("");
+    }
 
     return fail(cmd + ": command not found. Type 'help' to see available commands.");
+  }
+
+  function expandShellTokens(tokens) {
+    let expanded = tokens.map((part) => part.replace(/\$([A-Za-z_][A-Za-z0-9_]*)/g, (_, name) => shellVars[name] == null ? "" : shellVars[name]));
+    let depth = 0;
+    while (expanded.length && Object.prototype.hasOwnProperty.call(aliases, expanded[0]) && depth < 8) {
+      const replacement = tokenize(aliases[expanded[0]]);
+      expanded = replacement.concat(expanded.slice(1));
+      depth += 1;
+    }
+    return expanded.map((part) => part.replace(/\$([A-Za-z_][A-Za-z0-9_]*)/g, (_, name) => shellVars[name] == null ? "" : shellVars[name]));
   }
 
   function executePipeline(stages) {
@@ -672,7 +860,7 @@
     }
     let result = { output: "", ok: true };
     for (const stage of cleanStages) {
-      const args = stage.filter(Boolean);
+      const args = expandShellTokens(stage.filter(Boolean));
       if (!args.length) continue;
       result = dispatch(args, stdin);
       stdin = result.output;
@@ -718,7 +906,7 @@
   }
 
   function availableCompletions(partial) {
-    const commandNames = ["help","clear","ls","cd","pwd","cat","echo","printf","touch","mkdir","rm","rmdir","cp","mv","tree","find","head","tail","grep","wc","sort","uniq","cut","tr","rev","history","man","which","whoami","id","hostname","uname","date","cal","uptime","ps","top","free","df","env","printenv","neofetch","fortune","cowsay","token","femtanyl","about","version","reboot","exit","ping","ifconfig"];
+    const commandNames = ["help","clear","ls","cd","pwd","cat","less","more","echo","printf","touch","write","append","mkdir","rm","rmdir","cp","mv","tree","find","head","tail","tac","nl","fold","grep","wc","sort","uniq","paste","cut","tr","rev","diff","base64","hash","history","alias","unalias","export","unset","man","which","type","whoami","id","hostname","uname","date","cal","uptime","ps","top","free","df","du","env","printenv","neofetch","fortune","cowsay","token","femtanyl","about","version","reboot","exit","ping","ifconfig","seq"];
     const pathPart = partial.includes("/") || partial.startsWith("~");
     if (!pathPart) return commandNames.filter((name) => name.startsWith(partial));
     const slash = partial.lastIndexOf("/");
