@@ -79,7 +79,32 @@
     </div>
   </section>
 
+
+  <section class="language-modal" id="languageModal" role="dialog" aria-modal="true" aria-labelledby="languageTitle" hidden>
+    <div class="language-dialog">
+      <div class="language-dialog-top">
+        <span>TKEN27 // LANGUAGE MANAGER</span>
+        <span id="languageCurrent">ACTIVE: EN / English</span>
+      </div>
+      <h2 id="languageTitle">LANGUAGE PACKS</h2>
+      <p id="languageIntro">Install an offline language pack, activate it, or remove it. Your active language and installed packs stay saved in this browser.</p>
+      <div class="language-pack-list" id="languagePackList"></div>
+      <div class="language-install-status" id="languageStatus" role="status" aria-live="polite">READY</div>
+      <div class="language-progress-wrap" id="languageProgressWrap" hidden>
+        <div class="language-progress-track"><span id="languageProgressBar"></span></div>
+        <div class="language-progress-text" id="languageProgressText"></div>
+      </div>
+      <div class="language-log" id="languageLog" aria-live="polite"></div>
+      <div class="language-dialog-actions">
+        <button id="languageCancel" type="button" hidden>cancel install</button>
+        <button id="languageClose" type="button">close</button>
+      </div>
+      <p class="language-footnote">OFFLINE LOCAL PACKS · SAVED IN BROWSER STORAGE · NO NETWORK DOWNLOAD</p>
+    </div>
+  </section>
+
   <script src="script.js"></script>
   <script src="expansion-pack.js"></script>
+  <script src="language-packs.js"></script>
 </body>
 </html>
