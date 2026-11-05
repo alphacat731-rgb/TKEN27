@@ -1196,6 +1196,9 @@
     if (command === "timer" && (words.length === 2 || trailingSpace)) {
       return ["start","stop","status","reset","lap","laps"].filter((name) => name.startsWith(partial));
     }
+    if (command === "mobile" && (words.length === 2 || trailingSpace)) {
+      return ["on","off","status"].filter((name) => name.startsWith(partial));
+    }
     if (command === "pack" && (words.length === 2 || trailingSpace)) {
       return ["install","status","uninstall","help"].filter((name) => name.startsWith(partial));
     }
