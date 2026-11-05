@@ -10,7 +10,7 @@ Open `index.html` in a browser, or enable GitHub Pages for the repository (deplo
 
 - Terminal boot sequence, command prompt, clock, command history, arrow-key recall and Tab completion
 - Virtual filesystem with `ls`, `cd`, `cat`, `mkdir`, `touch`, `write`, `append`, `rm`, `cp`, `mv`, `tree`, `find` and more
-- Text tools: `grep`, `head`, `tail`, `tac`, `nl`, `fold`, `wc`, `sort`, `uniq`, `paste`, `cut`, `tr`, `rev`, `diff`, `base64` and `hash`
+- Text tools: `grep`, `head`, `tail`, `tac`, `nl`, `fold`, `wc`, `sort`, `uniq`, `paste`, `cut`, `tr`, `rev`, `diff`, `base64`, `hash`, `calc`, `random` and `uuid`
 - Shell conveniences: functional aliases, session variables, command history clearing, pipes, redirects and command chaining
 - Token text interactions: `token hello`, `token ask`, `token say`, `token diary`, `token pet`, `token hug`, `token boop`, `token roll`, `token flip` and more
 - Femtanyl track index, hidden diary easter egg and simulated system commands
@@ -24,6 +24,9 @@ token hello
 token ask
 token say "i own this terminal now"
 token diary
+calc 12 * (3 + 4)
+random 1 20
+uuid
 alias gs=grep
 export WHO=visitor
 echo hello $WHO
