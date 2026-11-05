@@ -16,6 +16,7 @@ Open `index.html` in a browser, or enable GitHub Pages for the repository (deplo
 - Token text interactions, Femtanyl track index, hidden diary easter egg and simulated system commands
 - Persisted virtual filesystem changes and command history using browser local storage
 - Classic monospace look, reduced-motion support and no spoken audio
+- Temporary phone-friendly layout via `mobile` / `mobile on`, restored with `desktop` or `mobile off`; it resets on refresh
 
 ## Optional expansion pack
 
