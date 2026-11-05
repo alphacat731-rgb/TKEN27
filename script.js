@@ -12,6 +12,8 @@
   const screen = $("terminalScreen");
   const commandForm = $("commandForm");
   const clock = $("clock");
+  const crashScreen = $("crashScreen");
+  const restartSystem = $("restartSystem");
 
   const bootLines = [
     "[    0.000] TKEN27 kernel starting...",
@@ -241,6 +243,19 @@
     updateClock();
   }
 
+  function showCrashScreen() {
+    if (!crashScreen || !restartSystem) return;
+    terminalShell.classList.add("hidden");
+    crashScreen.hidden = false;
+    restartSystem.focus();
+  }
+
+  restartSystem.addEventListener("click", () => {
+    crashScreen.hidden = true;
+    bootScreen.style.display = "";
+    boot();
+  });
+
   function tokenize(line) {
     const tokens = [];
     let current = "";
@@ -354,6 +369,7 @@
     "  download FILE         download a virtual file",
     "  mobile [on|off|status] switch to a temporary phone-friendly layout",
     "  desktop               restore the normal terminal layout",
+    "  crash-test             show the simulated system crash screen",
     "",
     "SHELL",
     "  history [-c] [-n N]   show, clear or limit command history",
@@ -420,6 +436,7 @@
     download: "download — save one virtual file to your device\nUsage: download FILE.",
     mobile: "mobile — temporarily switch the terminal to a phone-friendly layout\nUsage: mobile [on|off|status]. The setting lasts only until this page is refreshed.",
     desktop: "desktop — restore the normal terminal layout\nUsage: desktop. This only changes the current page session.",
+    "crash-test": "crash-test — trigger a harmless simulated system crash screen\nUsage: crash-test. Press restart system to replay the boot sequence.",
     help: "help — show the command index\nUsage: help [COMMAND]"
   };
 
@@ -432,6 +449,10 @@
     const pass = (text) => ({ output: text == null ? "" : String(text), ok: true });
     const resolveArgs = (list) => list.map((p) => normalizePath(p));
 
+    if (cmd === "crash-test") {
+      showCrashScreen();
+      return pass("");
+    }
     if (cmd === "mobile") {
       const action = (a[0] || "on").toLowerCase();
       if (action === "status") return pass(document.body.classList.contains("mobile-mode") ? "phone-friendly layout is active (temporary)." : "phone-friendly layout is inactive.");
@@ -1215,7 +1236,7 @@
       return Object.keys(manuals).filter((name) => name.startsWith(partial));
     }
 
-    const commandNames = ["help","clear","ls","cd","pwd","cat","less","more","echo","printf","touch","write","append","mkdir","rm","rmdir","cp","mv","tree","find","locate","patch","head","tail","tac","nl","fold","grep","wc","sort","uniq","paste","cut","tr","rev","diff","base64","hash","calc","random","uuid","json","rot13","replace","timer","download","mobile","desktop","history","alias","unalias","export","unset","man","which","type","whoami","id","hostname","uname","date","cal","uptime","ps","top","free","df","du","env","printenv","neofetch","fortune","cowsay","token","femtanyl","about","version","reboot","exit","ping","ifconfig","seq","pack","visualizer","decrypt","chmod","chown","perm","watch","jobs","kill"];
+    const commandNames = ["help","clear","ls","cd","pwd","cat","less","more","echo","printf","touch","write","append","mkdir","rm","rmdir","cp","mv","tree","find","locate","patch","head","tail","tac","nl","fold","grep","wc","sort","uniq","paste","cut","tr","rev","diff","base64","hash","calc","random","uuid","json","rot13","replace","timer","download","mobile","desktop","crash-test","history","alias","unalias","export","unset","man","which","type","whoami","id","hostname","uname","date","cal","uptime","ps","top","free","df","du","env","printenv","neofetch","fortune","cowsay","token","femtanyl","about","version","reboot","exit","ping","ifconfig","seq","pack","visualizer","decrypt","chmod","chown","perm","watch","jobs","kill"];
     if (words.length <= 1 && !trailingSpace) return commandNames.filter((name) => name.startsWith(partial));
 
     const pathCommands = ["cd","ls","cat","less","more","type","touch","write","append","rm","rmdir","cp","mv","tree","find","locate","patch","chmod","chown","perm","head","tail","nl","fold","uniq","rev","cut","file","stat","du","replace","download","base64","hash","json","rot13"];
