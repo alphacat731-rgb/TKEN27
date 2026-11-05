@@ -167,6 +167,10 @@
     });
   }
 
+  const maxOutputLines = 1600;
+  function trimOutput() {
+    while (output.childNodes.length > maxOutputLines) output.removeChild(output.firstChild);
+  }
   function print(text, type) {
     const value = String(text == null ? "" : text);
     const lines = value.split("\n");
@@ -176,6 +180,7 @@
       row.textContent = line || " ";
       output.appendChild(row);
     });
+    trimOutput();
     screen.scrollTop = screen.scrollHeight;
   }
 
@@ -191,6 +196,7 @@
     c.textContent = command;
     row.append(p, c);
     output.appendChild(row);
+    trimOutput();
   }
   function boot() {
     window.clearInterval(bootTimer);
