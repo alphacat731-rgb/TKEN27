@@ -315,6 +315,9 @@
     "  wc / rev / diff       count, reverse and compare",
     "  base64 [-d]           encode or decode text",
     "  hash FILE             calculate a simple FNV-1a checksum",
+    "  calc EXPRESSION       evaluate basic arithmetic",
+    "  random [MIN] [MAX]    generate a random integer",
+    "  uuid                  generate a pseudo-random UUID",
     "",
     "SHELL",
     "  history [-c]          show or clear command history",
@@ -367,6 +370,9 @@
     append: "append — add text to the end of a virtual file\nUsage: append FILE TEXT...",
     diff: "diff — compare two virtual text files\nUsage: diff FILE1 FILE2",
     base64: "base64 — encode or decode text\nUsage: base64 FILE or base64 -d FILE\nAlso accepts input from a pipe.",
+    calc: "calc — evaluate basic arithmetic\nUsage: calc 2 + 3 * (4 - 1)\nSupports +, -, *, /, %, ^ and parentheses.",
+    random: "random — generate a random integer\nUsage: random [MIN] [MAX]\nDefaults to a number between 1 and 100.",
+    uuid: "uuid — generate a pseudo-random UUID\nUsage: uuid\nNot intended for security or cryptographic use.",
     help: "help — show the command index\nUsage: help [COMMAND]"
   };
 
@@ -439,7 +445,7 @@
       return pass(Object.keys(vars).sort().map((key) => key + "=" + vars[key]).join("\n"));
     }
     if (cmd === "which" || cmd === "whereis" || cmd === "type") {
-      const commands = ["ls","cd","pwd","cat","echo","printf","grep","head","tail","tac","nl","fold","wc","sort","uniq","paste","cut","tr","rev","diff","base64","hash","mkdir","touch","write","append","rm","cp","mv","find","tree","token","femtanyl","help","man","clear","uname","date","whoami","neofetch","fortune","cowsay","history","alias","unalias","export","unset","seq","reboot"];
+      const commands = ["ls","cd","pwd","cat","echo","printf","grep","head","tail","tac","nl","fold","wc","sort","uniq","paste","cut","tr","rev","diff","base64","hash","calc","random","uuid","mkdir","touch","write","append","rm","cp","mv","find","tree","token","femtanyl","help","man","clear","uname","date","whoami","neofetch","fortune","cowsay","history","alias","unalias","export","unset","seq","reboot"];
       return pass(a.map((name) => commands.includes(name) ? name + ": shell builtin (/usr/bin/" + name + ")" : name + " not found").join("\n"));
     }
     if (cmd === "man") {
@@ -539,10 +545,76 @@
       let start = 1, end = Number(a[0]), step = 1;
       if (a.length > 1) { start = Number(a[0]); end = Number(a[1]); }
       if (a.length > 2) step = Number(a[2]) || 1;
-      if (!Number.isFinite(end) || end - start > 500) return fail("seq: provide a range smaller than 500");
+      if (!Number.isFinite(start) || !Number.isFinite(end) || !Number.isFinite(step) || step === 0 || Math.abs(end - start) > 500) return fail("seq: provide a valid range smaller than 500");
       const values = [];
-      for (let n = start; step > 0 ? n <= end : n >= end; n += step) values.push(n);
+      for (let n = start, guard = 0; (step > 0 ? n <= end : n >= end) && guard < 501; n += step, guard += 1) values.push(n);
       return pass(values.join("\n"));
+    }
+    if (cmd === "calc") {
+      const expression = a.join("").replace(/\s+/g, "");
+      if (!expression) return fail("calc: usage: calc 2 + 3 * 4");
+      const tokens = expression.match(/\d+(?:\.\d+)?|[()+\-*/%^]/g) || [];
+      if (tokens.join("") !== expression) return fail("calc: only numbers, parentheses and + - * / % ^ are supported");
+      const output = [], operators = [];
+      const precedence = { "+": 1, "-": 1, "*": 2, "/": 2, "%": 2, "^": 3, "u+": 4, "u-": 4 };
+      let expectsValue = true;
+      for (const token of tokens) {
+        if (/^\d/.test(token)) { output.push(Number(token)); expectsValue = false; continue; }
+        if (token === "(") { operators.push(token); expectsValue = true; continue; }
+        if (token === ")") {
+          while (operators.length && operators[operators.length - 1] !== "(") output.push(operators.pop());
+          if (!operators.length) return fail("calc: mismatched parentheses");
+          operators.pop(); expectsValue = false; continue;
+        }
+        const op = expectsValue && (token === "+" || token === "-") ? "u" + token : token;
+        if (expectsValue && op === token && token !== "+" && token !== "-") return fail("calc: unexpected operator " + token);
+        while (operators.length && operators[operators.length - 1] !== "(") {
+          const top = operators[operators.length - 1];
+          const rightAssociative = op === "^" || op === "u+" || op === "u-";
+          if (precedence[top] > precedence[op] || (!rightAssociative && precedence[top] === precedence[op])) output.push(operators.pop());
+          else break;
+        }
+        operators.push(op); expectsValue = true;
+      }
+      if (expectsValue) return fail("calc: expression ends with an operator");
+      while (operators.length) {
+        const op = operators.pop();
+        if (op === "(") return fail("calc: mismatched parentheses");
+        output.push(op);
+      }
+      const stack = [];
+      for (const token of output) {
+        if (typeof token === "number") { stack.push(token); continue; }
+        if (token === "u+" || token === "u-") {
+          if (!stack.length) return fail("calc: invalid expression");
+          const n = stack.pop(); stack.push(token === "u-" ? -n : n); continue;
+        }
+        if (stack.length < 2) return fail("calc: invalid expression");
+        const right = stack.pop(), left = stack.pop();
+        let value;
+        if (token === "+") value = left + right;
+        else if (token === "-") value = left - right;
+        else if (token === "*") value = left * right;
+        else if (token === "/") value = left / right;
+        else if (token === "%") value = left % right;
+        else value = Math.pow(left, right);
+        if (!Number.isFinite(value)) return fail("calc: result is not a finite number");
+        stack.push(value);
+      }
+      return stack.length === 1 ? pass(String(stack[0])) : fail("calc: invalid expression");
+    }
+    if (cmd === "random") {
+      const min = a.length > 0 ? Number(a[0]) : 1;
+      const max = a.length > 1 ? Number(a[1]) : 100;
+      if (!Number.isFinite(min) || !Number.isFinite(max) || max < min || max - min > 1000000) return fail("random: usage: random [MIN] [MAX]");
+      return pass(String(Math.floor(Math.random() * (max - min + 1)) + min));
+    }
+    if (cmd === "uuid") {
+      const value = "xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx".replace(/[xy]/g, (ch) => {
+        const r = Math.floor(Math.random() * 16);
+        return (ch === "x" ? r : (r & 3) | 8).toString(16);
+      });
+      return pass(value);
     }
 
     if (cmd === "cd") {
@@ -719,7 +791,9 @@
       const path = a[0];
       const content = a.length > 1 ? a.slice(1).join(" ") : (stdin || "");
       if (content === "" && !stdin) return fail(cmd + ": give me some text to write");
-      const result = writeFile(path, content, cmd === "append");
+      const existing = readFile(path);
+      const payload = cmd === "append" && existing != null && existing.length && !existing.endsWith("\n") ? "\n" + content : content;
+      const result = writeFile(path, payload, cmd === "append");
       return result.ok ? pass("") : fail(result.error);
     }
     if (cmd === "tac") {
@@ -905,8 +979,13 @@
     }
   }
 
-  function availableCompletions(partial) {
-    const commandNames = ["help","clear","ls","cd","pwd","cat","less","more","echo","printf","touch","write","append","mkdir","rm","rmdir","cp","mv","tree","find","head","tail","tac","nl","fold","grep","wc","sort","uniq","paste","cut","tr","rev","diff","base64","hash","history","alias","unalias","export","unset","man","which","type","whoami","id","hostname","uname","date","cal","uptime","ps","top","free","df","du","env","printenv","neofetch","fortune","cowsay","token","femtanyl","about","version","reboot","exit","ping","ifconfig","seq"];
+  function availableCompletions(partial, raw) {
+    const words = (raw || "").trim().split(/\s+/);
+    if (words[0] === "token" && words.length === 2) {
+      return ["hello","hi","help","info","look","lore","diary","secret","mood","stats","songs","quote","ask","joke","say","pet","feed","hug","boop","highfive","bite","poke","dance","scream","roll","flip","choose","ping","creator"].filter((name) => name.startsWith(partial));
+    }
+    if (words[0] === "man" && words.length === 2) return Object.keys(manuals).filter((name) => name.startsWith(partial));
+    const commandNames = ["help","clear","ls","cd","pwd","cat","less","more","echo","printf","touch","write","append","mkdir","rm","rmdir","cp","mv","tree","find","head","tail","tac","nl","fold","grep","wc","sort","uniq","paste","cut","tr","rev","diff","base64","hash","calc","random","uuid","history","alias","unalias","export","unset","man","which","type","whoami","id","hostname","uname","date","cal","uptime","ps","top","free","df","du","env","printenv","neofetch","fortune","cowsay","token","femtanyl","about","version","reboot","exit","ping","ifconfig","seq"];
     const pathPart = partial.includes("/") || partial.startsWith("~");
     if (!pathPart) return commandNames.filter((name) => name.startsWith(partial));
     const slash = partial.lastIndexOf("/");
@@ -946,7 +1025,7 @@
       event.preventDefault();
       const raw = input.value;
       const partial = raw.split(/\s+/).pop() || "";
-      if (!tabMatches.length) { tabMatches = availableCompletions(partial); tabIndex = 0; }
+      if (!tabMatches.length) { tabMatches = availableCompletions(partial, raw); tabIndex = 0; }
       if (tabMatches.length === 1) input.value = raw.slice(0, raw.length - partial.length) + tabMatches[0] + (isDir(normalizePath(tabMatches[0])) ? "" : " ");
       else if (tabMatches.length > 1) {
         const prefix = tabMatches.reduce((p, item) => {
