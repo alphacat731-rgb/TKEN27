@@ -174,7 +174,9 @@
     while (output.childNodes.length > maxOutputLines) output.removeChild(output.firstChild);
   }
   function print(text, type) {
-    const value = String(text == null ? "" : text);
+    const rawValue = String(text == null ? "" : text);
+    const localizer = window.TKEN27LanguagePacks;
+    const value = localizer && typeof localizer.translateOutput === "function" ? localizer.translateOutput(rawValue) : rawValue;
     const lines = value.split("\n");
     lines.forEach((line) => {
       const row = document.createElement("div");
@@ -369,6 +371,7 @@
     "  download FILE         download a virtual file",
     "  mobile [on|off|status] switch to a temporary phone-friendly layout",
     "  desktop               restore the normal terminal layout",
+    "  language / lang        install and switch interface language packs",
     "  crash-test             show the simulated system crash screen",
     "",
     "SHELL",
@@ -436,6 +439,7 @@
     download: "download — save one virtual file to your device\nUsage: download FILE.",
     mobile: "mobile — temporarily switch the terminal to a phone-friendly layout\nUsage: mobile [on|off|status]. The setting lasts only until this page is refreshed.",
     desktop: "desktop — restore the normal terminal layout\nUsage: desktop. This only changes the current page session.",
+    language: "language — manage offline interface language packs\nUsage: language [list|install CODE|use CODE|remove CODE|status]. Available codes: es, fr, de, ja.",
     "crash-test": "crash-test — trigger a harmless simulated system crash screen\nUsage: crash-test. Press restart system to replay the boot sequence.",
     help: "help — show the command index\nUsage: help [COMMAND]"
   };
@@ -448,6 +452,20 @@
     const fail = (message) => ({ output: message, ok: false });
     const pass = (text) => ({ output: text == null ? "" : String(text), ok: true });
     const resolveArgs = (list) => list.map((p) => normalizePath(p));
+    const languagePacks = window.TKEN27LanguagePacks;
+    if ((cmd === "language" || cmd === "lang") && languagePacks) return languagePacks.dispatch(a);
+    if ((cmd === "help" || cmd === "?") && languagePacks) {
+      const localizedHelp = languagePacks.getHelpText(a[0] || "");
+      if (localizedHelp) return pass(localizedHelp);
+    }
+    if (cmd === "man" && languagePacks && a[0]) {
+      const localizedManual = languagePacks.getManual(a[0]);
+      if (localizedManual) return pass(localizedManual);
+    }
+    if (cmd === "token" && languagePacks) {
+      const localizedToken = languagePacks.tokenCommand(a);
+      if (localizedToken) return localizedToken;
+    }
 
     if (cmd === "crash-test") {
       showCrashScreen();
@@ -530,7 +548,7 @@
       return pass(Object.keys(vars).sort().map((key) => key + "=" + vars[key]).join("\n"));
     }
     if (cmd === "which" || cmd === "whereis" || cmd === "type") {
-      const commands = ["ls","cd","pwd","cat","echo","printf","grep","head","tail","tac","nl","fold","wc","sort","uniq","paste","cut","tr","rev","diff","base64","hash","calc","random","uuid","json","rot13","replace","timer","download","mkdir","touch","write","append","rm","cp","mv","find","tree","token","femtanyl","help","man","clear","uname","date","whoami","neofetch","fortune","cowsay","history","alias","unalias","export","unset","seq","reboot"];
+      const commands = ["ls","cd","pwd","cat","echo","printf","grep","head","tail","tac","nl","fold","wc","sort","uniq","paste","cut","tr","rev","diff","base64","hash","calc","random","uuid","json","rot13","replace","timer","download","mkdir","touch","write","append","rm","cp","mv","find","tree","token","femtanyl","help","man","clear","uname","date","whoami","neofetch","fortune","cowsay","history","alias","unalias","export","unset","seq","reboot","language","lang"];
       return pass(a.map((name) => commands.includes(name) ? name + ": shell builtin (/usr/bin/" + name + ")" : name + " not found").join("\n"));
     }
     if (cmd === "man") {
@@ -1220,6 +1238,12 @@
     if (command === "mobile" && (words.length === 2 || trailingSpace)) {
       return ["on","off","status"].filter((name) => name.startsWith(partial));
     }
+    if ((command === "language" || command === "lang") && (words.length === 2 || trailingSpace)) {
+      return ["list","install","use","set","remove","uninstall","status","help"].filter((name) => name.startsWith(partial));
+    }
+    if ((command === "language" || command === "lang") && words.length === 3 && ["install","use","set","remove","uninstall"].includes(words[1])) {
+      return ["es","fr","de","ja"].filter((name) => name.startsWith(partial));
+    }
     if (command === "pack" && (words.length === 2 || trailingSpace)) {
       return ["install","status","uninstall","help"].filter((name) => name.startsWith(partial));
     }
@@ -1236,7 +1260,7 @@
       return Object.keys(manuals).filter((name) => name.startsWith(partial));
     }
 
-    const commandNames = ["help","clear","ls","cd","pwd","cat","less","more","echo","printf","touch","write","append","mkdir","rm","rmdir","cp","mv","tree","find","locate","patch","head","tail","tac","nl","fold","grep","wc","sort","uniq","paste","cut","tr","rev","diff","base64","hash","calc","random","uuid","json","rot13","replace","timer","download","mobile","desktop","crash-test","history","alias","unalias","export","unset","man","which","type","whoami","id","hostname","uname","date","cal","uptime","ps","top","free","df","du","env","printenv","neofetch","fortune","cowsay","token","femtanyl","about","version","reboot","exit","ping","ifconfig","seq","pack","visualizer","decrypt","chmod","chown","perm","watch","jobs","kill"];
+    const commandNames = ["help","clear","ls","cd","pwd","cat","less","more","echo","printf","touch","write","append","mkdir","rm","rmdir","cp","mv","tree","find","locate","patch","head","tail","tac","nl","fold","grep","wc","sort","uniq","paste","cut","tr","rev","diff","base64","hash","calc","random","uuid","json","rot13","replace","timer","download","mobile","desktop","crash-test","history","alias","unalias","export","unset","man","which","type","whoami","id","hostname","uname","date","cal","uptime","ps","top","free","df","du","env","printenv","neofetch","fortune","cowsay","token","femtanyl","about","version","reboot","exit","ping","ifconfig","seq","pack","visualizer","decrypt","chmod","chown","perm","watch","jobs","kill","language","lang"];
     if (words.length <= 1 && !trailingSpace) return commandNames.filter((name) => name.startsWith(partial));
 
     const pathCommands = ["cd","ls","cat","less","more","type","touch","write","append","rm","rmdir","cp","mv","tree","find","locate","patch","chmod","chown","perm","head","tail","nl","fold","uniq","rev","cut","file","stat","du","replace","download","base64","hash","json","rot13"];
