@@ -66,8 +66,13 @@
     SHELL: "/bin/tknsh",
     HOSTNAME: "tken27",
     TERM: "xterm-256color",
-    PATH: "/usr/local/bin:/usr/bin:/bin"
+    PATH: "/usr/local/bin:/usr/bin:/bin",
+    PWD: "/home/token",
+    OLDPWD: "/home/token"
   };
+  let stopwatchStartedAt = null;
+  let stopwatchElapsed = 0;
+  const stopwatchLaps = [];
 
   try {
     const saved = JSON.parse(localStorage.getItem(storageKey) || "{}");
@@ -222,11 +227,11 @@
     const flush = () => { if (current.length) { tokens.push(current); current = ""; } };
     for (let i = 0; i < line.length; i += 1) {
       const ch = line[i];
-      if (escaped) { current += ch; escaped = false; continue; }
+      if (escaped) { current += ch === "$" ? "\uE000" : ch; escaped = false; continue; }
       if (ch === "\\" && quote !== "'") { escaped = true; continue; }
       if (quote) {
         if (ch === quote) quote = null;
-        else current += ch;
+        else current += quote === "'" && ch === "$" ? "\uE000" : ch;
         continue;
       }
       if (ch === "'" || ch === '"') { quote = ch; continue; }
@@ -318,6 +323,11 @@
     "  calc EXPRESSION       evaluate basic arithmetic",
     "  random [MIN] [MAX]    generate a random integer",
     "  uuid                  generate a pseudo-random UUID",
+    "  json [-c] [FILE]       validate and format JSON",
+    "  rot13 [FILE]          rotate letters by 13 places",
+    "  replace FILE OLD NEW  replace literal text in a file",
+    "  timer start/stop/lap  run a simple stopwatch",
+    "  download FILE         download a virtual file",
     "",
     "SHELL",
     "  history [-c]          show or clear command history",
@@ -373,6 +383,11 @@
     calc: "calc — evaluate basic arithmetic\nUsage: calc 2 + 3 * (4 - 1)\nSupports +, -, *, /, %, ^ and parentheses.",
     random: "random — generate a random integer\nUsage: random [MIN] [MAX]\nDefaults to a number between 1 and 100.",
     uuid: "uuid — generate a pseudo-random UUID\nUsage: uuid\nNot intended for security or cryptographic use.",
+    json: "json — validate and format JSON\nUsage: json [FILE] or command | json; use -c for compact output.",
+    rot13: "rot13 — rotate ASCII letters by 13 places\nUsage: rot13 [FILE] or command | rot13.",
+    replace: "replace — replace literal text in a virtual file\nUsage: replace FILE OLD_TEXT NEW_TEXT.",
+    timer: "timer — operate a session stopwatch\nUsage: timer start|stop|status|reset|lap|laps.",
+    download: "download — save one virtual file to your device\nUsage: download FILE.",
     help: "help — show the command index\nUsage: help [COMMAND]"
   };
 
@@ -445,7 +460,7 @@
       return pass(Object.keys(vars).sort().map((key) => key + "=" + vars[key]).join("\n"));
     }
     if (cmd === "which" || cmd === "whereis" || cmd === "type") {
-      const commands = ["ls","cd","pwd","cat","echo","printf","grep","head","tail","tac","nl","fold","wc","sort","uniq","paste","cut","tr","rev","diff","base64","hash","calc","random","uuid","mkdir","touch","write","append","rm","cp","mv","find","tree","token","femtanyl","help","man","clear","uname","date","whoami","neofetch","fortune","cowsay","history","alias","unalias","export","unset","seq","reboot"];
+      const commands = ["ls","cd","pwd","cat","echo","printf","grep","head","tail","tac","nl","fold","wc","sort","uniq","paste","cut","tr","rev","diff","base64","hash","calc","random","uuid","json","rot13","replace","timer","download","mkdir","touch","write","append","rm","cp","mv","find","tree","token","femtanyl","help","man","clear","uname","date","whoami","neofetch","fortune","cowsay","history","alias","unalias","export","unset","seq","reboot"];
       return pass(a.map((name) => commands.includes(name) ? name + ": shell builtin (/usr/bin/" + name + ")" : name + " not found").join("\n"));
     }
     if (cmd === "man") {
@@ -482,7 +497,7 @@
     }
     if (cmd === "cowsay") {
       const msg = argText || stdin || "say something interesting";
-      return pass("token: " + msg.slice(0, 56));
+      return pass("“" + msg.slice(0, 56) + "”");
     }
     if (cmd === "token") {
       const sub = (a[0] || "hello").toLowerCase();
@@ -536,7 +551,7 @@
     }
     if (cmd === "exit" || cmd === "logout") return pass("session still running. close the tab whenever. i'll be here. probably.");
     if (cmd === "poweroff" || cmd === "shutdown") return pass("poweroff: this is only a browser simulation. your device stays on.");
-    if (cmd === "sudo" || cmd === "su") return fail("nope. Token has the only root password and is not sharing.");
+    if (cmd === "sudo" || cmd === "su") return fail("nice try. admin privileges are not part of this simulation.");
     if (cmd === "apt" || cmd === "apt-get" || cmd === "dnf" || cmd === "pacman") return fail("package manager unavailable: this userspace is read-only outside its virtual home.");
     if (cmd === "curl" || cmd === "wget" || cmd === "ssh" || cmd === "scp") return fail(cmd + ": network access is disabled in this terminal simulation.");
     if (cmd === "kill") return fail("kill: permission denied. token.service is protected.");
@@ -544,7 +559,7 @@
     if (cmd === "seq") {
       let start = 1, end = Number(a[0]), step = 1;
       if (a.length > 1) { start = Number(a[0]); end = Number(a[1]); }
-      if (a.length > 2) step = Number(a[2]) || 1;
+      if (a.length > 2) step = Number(a[2]);
       if (!Number.isFinite(start) || !Number.isFinite(end) || !Number.isFinite(step) || step === 0 || Math.abs(end - start) > 500) return fail("seq: provide a valid range smaller than 500");
       const values = [];
       for (let n = start, guard = 0; (step > 0 ? n <= end : n >= end) && guard < 501; n += step, guard += 1) values.push(n);
@@ -621,9 +636,11 @@
       const target = normalizePath(a[0] || "/home/token");
       if (!isDir(target)) return fail("cd: " + (a[0] || "~") + ": no such directory");
       window.__tkenPreviousDir = cwd;
+      shellVars.OLDPWD = cwd;
       cwd = target;
+      shellVars.PWD = cwd;
       setPrompt();
-      return pass("");
+      return pass(a[0] === "-" ? cwd : "");
     }
     if (cmd === "ls" || cmd === "dir") {
       let showAll = false, longFormat = false, pathArg = null;
@@ -663,22 +680,50 @@
       const errors = [];
       names.forEach((name) => {
         const path = normalizePath(name);
-        if (exists(path)) { if (!recursive) errors.push("mkdir: cannot create directory '" + name + "': file exists"); return; }
+        if (isFile(path)) { errors.push("mkdir: cannot create '" + name + "': a file already exists"); return; }
+        if (isDir(path)) {
+          if (!recursive) errors.push("mkdir: cannot create directory '" + name + "': file exists");
+          return;
+        }
         if (recursive) {
           let walk = "";
-          path.split("/").filter(Boolean).forEach((part) => { walk += "/" + part; dirs.add(walk); });
+          let blocked = false;
+          path.split("/").filter(Boolean).forEach((part) => {
+            if (blocked) return;
+            walk += "/" + part;
+            if (isFile(walk)) {
+              errors.push("mkdir: cannot create '" + name + "': '" + walk + "' is a file");
+              blocked = true;
+            } else dirs.add(walk);
+          });
         } else if (isDir(parentPath(path))) dirs.add(path);
         else errors.push("mkdir: cannot create directory '" + name + "': parent does not exist");
       });
       persist();
       return errors.length ? fail(errors.join("\n")) : pass("");
     }
-    if (cmd === "rm" || cmd === "rmdir") {
-      const recursive = a.includes("-r") || a.includes("-R") || a.includes("-rf") || a.includes("-fr") || cmd === "rmdir";
+    if (cmd === "rmdir") {
       const names = a.filter((item) => !item.startsWith("-"));
-      if (!names.length) return fail(cmd + ": missing operand");
-      const errors = names.map((name) => deletePath(normalizePath(name), recursive)).filter(Boolean);
+      if (!names.length) return fail("rmdir: missing operand");
+      const errors = [];
+      names.forEach((name) => {
+        const path = normalizePath(name);
+        if (!isDir(path)) errors.push("rmdir: '" + name + "': not a directory");
+        else if (["/","/home","/home/token","/etc"].includes(path)) errors.push("rmdir: refusing to remove protected system path");
+        else if (childrenOf(path).length) errors.push("rmdir: '" + name + "': directory not empty");
+        else dirs.delete(path);
+      });
+      persist();
       return errors.length ? fail(errors.join("\n")) : pass("");
+    }
+    if (cmd === "rm") {
+      const recursive = a.some((item) => ["-r","-R","-rf","-fr","-rF","-Rf","-fR","-Fr"].includes(item));
+      const force = a.some((item) => item === "-f" || item === "-rf" || item === "-fr");
+      const names = a.filter((item) => !item.startsWith("-"));
+      if (!names.length) return fail("rm: missing operand");
+      const errors = names.map((name) => deletePath(normalizePath(name), recursive)).filter(Boolean);
+      const visibleErrors = force ? errors.filter((error) => !error.includes("no such file or directory")) : errors;
+      return visibleErrors.length ? fail(visibleErrors.join("\n")) : pass("");
     }
     if (cmd === "cp" || cmd === "mv") {
       if (a.length < 2) return fail(cmd + ": missing file operand");
@@ -686,6 +731,8 @@
       const dest = normalizePath(a[1]);
       if (!isFile(src)) return fail(cmd + ": cannot stat '" + a[0] + "': no such file");
       const finalDest = isDir(dest) ? normalizePath(dest + "/" + baseName(src)) : dest;
+      if (finalDest === src) return pass("");
+      if (isDir(finalDest)) return fail(cmd + ": destination is a directory");
       if (!isDir(parentPath(finalDest))) return fail(cmd + ": destination directory does not exist");
       files[finalDest] = files[src];
       if (cmd === "mv") delete files[src];
@@ -723,32 +770,44 @@
     if (cmd === "head" || cmd === "tail") {
       let count = 10;
       const nIndex = a.indexOf("-n");
-      if (nIndex >= 0 && a[nIndex + 1]) count = Math.max(1, Math.min(500, Number(a[nIndex + 1]) || 10));
+      if (nIndex >= 0) {
+        const requested = Number(a[nIndex + 1]);
+        if (!Number.isInteger(requested) || requested < 0) return fail(cmd + ": -n expects a non-negative integer");
+        count = Math.min(500, requested);
+      }
       const name = a.filter((x, i) => x !== "-n" && (nIndex < 0 || i !== nIndex + 1))[0];
       const content = name ? readFile(name) : stdin;
       if (content === undefined || content === null) return fail(cmd + ": missing file or input");
       const lines = String(content).split("\n");
-      return pass((cmd === "head" ? lines.slice(0, count) : lines.slice(-count)).join("\n"));
+      return pass(count === 0 ? "" : (cmd === "head" ? lines.slice(0, count) : lines.slice(-count)).join("\n"));
     }
     if (cmd === "wc") {
-      const content = a.length ? a.filter((x) => !x.startsWith("-")).map((name) => readFile(name) || "").join("\n") : (stdin || "");
-      if (!a.length && !stdin) return fail("wc: missing file or input");
-      const lines = content.length ? content.split("\n").length : 0;
-      const words = content.trim() ? content.trim().split(/\s+/).length : 0;
-      const bytes = new TextEncoder().encode(content).length;
+      const names = a.filter((x) => !x.startsWith("-"));
+      if (names.some((name) => readFile(name) == null)) return fail("wc: one or more files could not be read");
+      const content = names.length ? names.map((name) => readFile(name)).join("\n") : stdin;
+      if (content == null) return fail("wc: missing file or input");
+      const lines = (String(content).match(/\n/g) || []).length;
+      const words = String(content).trim() ? String(content).trim().split(/\s+/).length : 0;
+      const bytes = new TextEncoder().encode(String(content)).length;
       const flags = a.filter((x) => x.startsWith("-")).join("");
-      return pass((flags.includes("l") ? lines + " " : "") + (flags.includes("w") ? words + " " : "") + (flags.includes("c") ? bytes + " " : (!flags ? lines + " " + words + " " + bytes : "")) + (a.find((x) => !x.startsWith("-")) || ""));
+      return pass((flags.includes("l") ? lines + " " : "") + (flags.includes("w") ? words + " " : "") + (flags.includes("c") ? bytes + " " : (!flags ? lines + " " + words + " " + bytes : "")) + (names[0] || ""));
     }
     if (cmd === "grep") {
-      const ignoreCase = a.includes("-i") || a.includes("-in") || a.includes("-ni");
-      const showNumber = a.includes("-n") || a.includes("-in") || a.includes("-ni");
+      const flags = a.filter((x) => x.startsWith("-")).join("");
+      const ignoreCase = flags.includes("i");
+      const showNumber = flags.includes("n");
+      const invert = flags.includes("v");
       const positional = a.filter((x) => !x.startsWith("-"));
       if (!positional.length) return fail("grep: missing pattern");
       const pattern = positional[0];
-      const source = positional.length > 1 ? positional.slice(1).map((name) => readFile(name) || "").join("\n") : (stdin || "");
-      if (!source && positional.length === 1 && !stdin) return fail("grep: missing input (try grep PATTERN FILE)");
+      const namedFiles = positional.slice(1);
+      const contents = namedFiles.map((name) => readFile(name));
+      if (contents.some((content) => content == null)) return fail("grep: one or more files could not be read");
+      const source = namedFiles.length ? contents.join("\n") : stdin;
+      if (source == null) return fail("grep: missing input (try grep PATTERN FILE)");
       const needle = ignoreCase ? pattern.toLowerCase() : pattern;
-      const matches = source.split("\n").map((line, i) => ({ line, i })).filter((item) => (ignoreCase ? item.line.toLowerCase() : item.line).includes(needle));
+      const matches = String(source).split("\n").map((line, i) => ({ line, i }))
+        .filter((item) => (ignoreCase ? item.line.toLowerCase() : item.line).includes(needle) !== invert);
       return pass(matches.map((item) => (showNumber ? (item.i + 1) + ":" : "") + item.line).join("\n"));
     }
     if (cmd === "sort") {
@@ -873,6 +932,90 @@
       }
       return pass(value.toString(16).padStart(8, "0") + "  " + (name || "(stdin)") + "  [FNV-1a 32-bit]");
     }
+    if (cmd === "json") {
+      const compact = a.includes("-c");
+      const name = a.find((item) => !item.startsWith("-"));
+      const content = name ? readFile(name) : stdin;
+      if (content == null || content === "") return fail("json: provide a JSON file or pipe JSON text");
+      try {
+        const parsed = JSON.parse(String(content));
+        return pass(JSON.stringify(parsed, null, compact ? 0 : 2));
+      } catch (error) {
+        return fail("json: invalid JSON (" + error.message + ")");
+      }
+    }
+    if (cmd === "rot13") {
+      const name = a[0];
+      const content = name ? readFile(name) : stdin;
+      if (content == null) return fail("rot13: provide a file or piped text");
+      return pass(String(content).replace(/[a-zA-Z]/g, (ch) => {
+        const base = ch <= "Z" ? 65 : 97;
+        return String.fromCharCode(((ch.charCodeAt(0) - base + 13) % 26) + base);
+      }));
+    }
+    if (cmd === "replace") {
+      if (a.length < 3) return fail("replace: usage: replace FILE OLD_TEXT NEW_TEXT");
+      const path = normalizePath(a[0]);
+      if (!isFile(path)) return fail("replace: cannot read '" + a[0] + "'");
+      const oldText = a[1], newText = a.slice(2).join(" ");
+      if (!oldText) return fail("replace: OLD_TEXT cannot be empty");
+      const parts = files[path].split(oldText);
+      const count = parts.length - 1;
+      if (!count) return pass("no matches. file left untouched.");
+      files[path] = parts.join(newText);
+      persist();
+      return pass("replaced " + count + " occurrence" + (count === 1 ? "" : "s") + " in " + path);
+    }
+    if (cmd === "timer") {
+      const action = (a[0] || "status").toLowerCase();
+      const elapsed = stopwatchElapsed + (stopwatchStartedAt == null ? 0 : Date.now() - stopwatchStartedAt);
+      const formatTime = (ms) => {
+        const total = Math.max(0, Math.floor(ms / 1000));
+        const hours = Math.floor(total / 3600);
+        const minutes = Math.floor((total % 3600) / 60);
+        const seconds = total % 60;
+        const millis = Math.floor(ms % 1000);
+        return [hours, minutes, seconds].map((n) => String(n).padStart(2, "0")).join(":") + "." + String(millis).padStart(3, "0");
+      };
+      if (action === "start") {
+        if (stopwatchStartedAt != null) return fail("timer: already running");
+        stopwatchStartedAt = Date.now();
+        return pass("stopwatch started.");
+      }
+      if (action === "stop") {
+        if (stopwatchStartedAt == null) return fail("timer: not running");
+        stopwatchElapsed = elapsed;
+        stopwatchStartedAt = null;
+        return pass("stopped at " + formatTime(stopwatchElapsed));
+      }
+      if (action === "reset") {
+        stopwatchStartedAt = null; stopwatchElapsed = 0; stopwatchLaps.length = 0;
+        return pass("stopwatch reset.");
+      }
+      if (action === "lap") {
+        if (stopwatchStartedAt == null) return fail("timer: start it first");
+        stopwatchLaps.push(elapsed);
+        return pass("lap " + stopwatchLaps.length + ": " + formatTime(elapsed));
+      }
+      if (action === "laps") return pass(stopwatchLaps.length ? stopwatchLaps.map((lap, i) => "lap " + (i + 1) + "  " + formatTime(lap)).join("\n") : "no laps yet.");
+      if (action === "status") return pass((stopwatchStartedAt == null ? "stopped at " : "running: ") + formatTime(elapsed));
+      return fail("timer: use start, stop, reset, status, lap or laps");
+    }
+    if (cmd === "download") {
+      const path = normalizePath(a[0] || "");
+      if (!isFile(path)) return fail("download: file not found");
+      if (typeof Blob === "undefined" || typeof URL === "undefined" || !URL.createObjectURL) return fail("download: this browser does not support file downloads");
+      const blobUrl = URL.createObjectURL(new Blob([files[path]], { type: "text/plain;charset=utf-8" }));
+      const link = document.createElement("a");
+      link.href = blobUrl;
+      link.download = baseName(path);
+      link.style.display = "none";
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      window.setTimeout(() => URL.revokeObjectURL(blobUrl), 1000);
+      return pass("download started: " + baseName(path));
+    }
     if (cmd === "basename") return pass(baseName(normalizePath(a[0] || ".")));
     if (cmd === "dirname") return pass(parentPath(normalizePath(a[0] || ".")));
     if (cmd === "realpath") return pass(normalizePath(a[0] || "."));
@@ -887,9 +1030,11 @@
     }).join("\n"));
     if (cmd === "du") {
       const root = normalizePath(a[0] || cwd);
+      if (!exists(root)) return fail("du: cannot access '" + (a[0] || root) + "': no such file or directory");
       let size = 0;
-      Object.keys(files).forEach((p) => { if (p.startsWith(root === "/" ? "/" : root + "/")) size += files[p].length; });
-      return pass(Math.max(4, Math.ceil(size / 1024) * 4) + "K\t" + root);
+      if (isFile(root)) size = files[root].length;
+      else Object.keys(files).forEach((path) => { if (path.startsWith(root === "/" ? "/" : root + "/")) size += files[path].length; });
+      return pass(Math.ceil(size / 1024) + "K\t" + root);
     }
     if (cmd === "chmod" || cmd === "chown") return fail(cmd + ": permissions are decorative in this simulation.");
     if (cmd === "alias") {
@@ -908,15 +1053,24 @@
     return fail(cmd + ": command not found. Type 'help' to see available commands.");
   }
 
+  function expandVariables(parts) {
+    return parts.map((part) => part
+      .replace(/\$\{([A-Za-z_][A-Za-z0-9_]*)\}|\$([A-Za-z_][A-Za-z0-9_]*)/g, (_, braced, plain) => {
+        const name = braced || plain;
+        return shellVars[name] == null ? "" : shellVars[name];
+      })
+      .replace(/\uE000/g, "$"));
+  }
+
   function expandShellTokens(tokens) {
-    let expanded = tokens.map((part) => part.replace(/\$([A-Za-z_][A-Za-z0-9_]*)/g, (_, name) => shellVars[name] == null ? "" : shellVars[name]));
+    let expanded = expandVariables(tokens);
     let depth = 0;
     while (expanded.length && Object.prototype.hasOwnProperty.call(aliases, expanded[0]) && depth < 8) {
       const replacement = tokenize(aliases[expanded[0]]);
       expanded = replacement.concat(expanded.slice(1));
       depth += 1;
     }
-    return expanded.map((part) => part.replace(/\$([A-Za-z_][A-Za-z0-9_]*)/g, (_, name) => shellVars[name] == null ? "" : shellVars[name]));
+    return expandVariables(expanded);
   }
 
   function executePipeline(stages) {
@@ -927,7 +1081,7 @@
     const last = cleanStages[cleanStages.length - 1];
     const redirectIndex = last.findIndex((token) => token === ">" || token === ">>");
     if (redirectIndex >= 0) {
-      redirect = last[redirectIndex + 1];
+      redirect = expandVariables([last[redirectIndex + 1] || ""])[0];
       append = last[redirectIndex] === ">>";
       last.splice(redirectIndex, 2);
       if (!redirect) return { output: "syntax error: expected file after redirection", ok: false };
@@ -981,11 +1135,11 @@
 
   function availableCompletions(partial, raw) {
     const words = (raw || "").trim().split(/\s+/);
-    if (words[0] === "token" && words.length === 2) {
+    if (words[0] === "token" && (words.length === 2 || /\s$/.test(raw || ""))) {
       return ["hello","hi","help","info","look","lore","diary","secret","mood","stats","songs","quote","ask","joke","say","pet","feed","hug","boop","highfive","bite","poke","dance","scream","roll","flip","choose","ping","creator"].filter((name) => name.startsWith(partial));
     }
     if (words[0] === "man" && words.length === 2) return Object.keys(manuals).filter((name) => name.startsWith(partial));
-    const commandNames = ["help","clear","ls","cd","pwd","cat","less","more","echo","printf","touch","write","append","mkdir","rm","rmdir","cp","mv","tree","find","head","tail","tac","nl","fold","grep","wc","sort","uniq","paste","cut","tr","rev","diff","base64","hash","calc","random","uuid","history","alias","unalias","export","unset","man","which","type","whoami","id","hostname","uname","date","cal","uptime","ps","top","free","df","du","env","printenv","neofetch","fortune","cowsay","token","femtanyl","about","version","reboot","exit","ping","ifconfig","seq"];
+    const commandNames = ["help","clear","ls","cd","pwd","cat","less","more","echo","printf","touch","write","append","mkdir","rm","rmdir","cp","mv","tree","find","head","tail","tac","nl","fold","grep","wc","sort","uniq","paste","cut","tr","rev","diff","base64","hash","calc","random","uuid","json","rot13","replace","timer","download","history","alias","unalias","export","unset","man","which","type","whoami","id","hostname","uname","date","cal","uptime","ps","top","free","df","du","env","printenv","neofetch","fortune","cowsay","token","femtanyl","about","version","reboot","exit","ping","ifconfig","seq"];
     const pathPart = partial.includes("/") || partial.startsWith("~");
     if (!pathPart) return commandNames.filter((name) => name.startsWith(partial));
     const slash = partial.lastIndexOf("/");
