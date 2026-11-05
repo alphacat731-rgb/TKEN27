@@ -42,6 +42,30 @@
     </footer>
   </main>
 
+  <section class="pack-modal" id="packModal" role="dialog" aria-modal="true" aria-labelledby="packTitle" hidden>
+    <div class="pack-dialog">
+      <div class="pack-dialog-top">
+        <span class="pack-kicker">TKEN27 // PACKAGE MANAGER</span>
+        <span class="pack-version">EXPANSION 1.0</span>
+      </div>
+      <h2 id="packTitle">TKEN27 EXPANSION PACK</h2>
+      <p class="pack-intro" id="packIntro"></p>
+      <div class="pack-status" id="packStatus" role="status" aria-live="polite">READY</div>
+      <div class="pack-progress-wrap" id="packProgressWrap" hidden>
+        <div class="pack-progress-track"><span id="packProgressBar"></span></div>
+        <div class="pack-progress-text" id="packProgressText"></div>
+      </div>
+      <div class="pack-log" id="packLog" aria-live="polite"></div>
+      <div class="pack-actions" id="packActions">
+        <button class="pack-secondary" id="packCancel" type="button">not now</button>
+        <button class="pack-primary" id="packStart" type="button">install pack</button>
+        <button class="pack-primary" id="packClose" type="button" hidden>close</button>
+      </div>
+      <p class="pack-footnote">LOCAL PACKAGE · NO NETWORK DOWNLOAD · BROWSER STORAGE</p>
+    </div>
+  </section>
+
   <script src="script.js"></script>
+  <script src="expansion-pack.js"></script>
 </body>
 </html>
