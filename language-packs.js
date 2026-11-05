@@ -73,6 +73,10 @@
         creator: "Femtanyl es el proyecto musical asociado a mí. busca sus lanzamientos para escuchar más."
       },
       common: {
+        "tken27 token shell [version 27.11]": "TKEN27 Terminal de Token [versión 27.11]",
+        "terminal's up. try not to break anything i might be using.": "El terminal está listo. Intenta no romper nada que esté usando.",
+        "type 'help' for commands. type 'token' if you want to talk to me.": "Escribe 'help' para ver los comandos. Escribe 'token' si quieres hablar conmigo.",
+        "i'm online. don't make it weird.": "Estoy conectada. No hagas que sea raro.",
         "no such file or directory": "no existe el archivo o directorio",
         "no such file": "no existe ese archivo",
         "no such directory": "no existe ese directorio",
@@ -155,6 +159,10 @@
         creator: "Femtanyl est le projet musical auquel je suis associée. cherche ses sorties pour en écouter plus."
       },
       common: {
+        "tken27 token shell [version 27.11]": "Terminal Token TKEN27 [version 27.11]",
+        "terminal's up. try not to break anything i might be using.": "Le terminal est prêt. Essaie de ne rien casser dont j'aurais besoin.",
+        "type 'help' for commands. type 'token' if you want to talk to me.": "Tapez 'help' pour afficher les commandes. Tapez 'token' pour me parler.",
+        "i'm online. don't make it weird.": "Je suis en ligne. Ne rends pas ça bizarre.",
         "no such file or directory": "fichier ou dossier introuvable",
         "no such file": "fichier introuvable",
         "no such directory": "dossier introuvable",
@@ -237,6 +245,10 @@
         creator: "Femtanyl ist das Musikprojekt, mit dem ich verbunden bin. hör dir die Veröffentlichungen an."
       },
       common: {
+        "tken27 token shell [version 27.11]": "TKEN27 Token-Terminal [Version 27.11]",
+        "terminal's up. try not to break anything i might be using.": "Das Terminal ist bereit. Mach nichts kaputt, das ich vielleicht noch brauche.",
+        "type 'help' for commands. type 'token' if you want to talk to me.": "Gib 'help' ein, um Befehle zu sehen. Mit 'token' kannst du mit mir reden.",
+        "i'm online. don't make it weird.": "Ich bin online. Mach es nicht komisch.",
         "no such file or directory": "Datei oder Verzeichnis nicht gefunden",
         "no such file": "Datei nicht gefunden",
         "no such directory": "Verzeichnis nicht gefunden",
@@ -319,6 +331,10 @@
         creator: "Femtanyl は私に関連する音楽プロジェクトだよ。作品を聴いてみてね。"
       },
       common: {
+        "tken27 token shell [version 27.11]": "TKEN27 Token ターミナル [version 27.11]",
+        "terminal's up. try not to break anything i might be using.": "ターミナルの準備ができたよ。私が使っているものを壊さないでね。",
+        "type 'help' for commands. type 'token' if you want to talk to me.": "'help' でコマンド一覧、'token' で私と話せるよ。",
+        "i'm online. don't make it weird.": "オンラインだよ。変なことしないでね。",
         "no such file or directory": "ファイルまたはディレクトリが見つかりません",
         "no such file": "ファイルが見つかりません",
         "no such directory": "ディレクトリが見つかりません",
@@ -635,10 +651,12 @@
   function translateOutput(text) {
     const pack = PACKS[state.active];
     if (!pack) return text;
+    const phrases = Object.keys(pack.common).sort((a, b) => b.length - a.length);
     return String(text).split("\n").map((line) => {
       let translated = line;
-      Object.keys(pack.common).forEach((source) => {
-        if (translated.toLowerCase() === source) translated = pack.common[source];
+      phrases.forEach((source) => {
+        const index = translated.toLowerCase().indexOf(source);
+        if (index >= 0) translated = translated.slice(0, index) + pack.common[source] + translated.slice(index + source.length);
       });
       return translated;
     }).join("\n");
