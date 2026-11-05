@@ -135,6 +135,7 @@
     startButton.hidden = true;
     cancelButton.hidden = false;
     status.textContent = "INSTALLING PACKAGE...";
+    cancelButton.textContent = "cancel install";
     progressText.textContent = "randomized install time: " + Math.round(installDuration / 1000) + " seconds";
     showInstallLog("[  OK  ] package manifest verified");
     showInstallLog("[ ..  ] copying local command modules");
@@ -192,6 +193,7 @@
     try {
       localStorage.removeItem(STORAGE_KEY);
       state = Object.assign({}, defaults);
+      delete document.documentElement.dataset.tken27Pack;
       status.textContent = "PACK UNINSTALLED";
       intro.textContent = "The expansion pack has been removed. Your base terminal and virtual filesystem are unchanged.";
       startButton.hidden = true;
@@ -335,17 +337,27 @@
     if (cmd === "chmod") {
       if (args.length !== 2 || !/^[0-7]{3,4}$/.test(args[0])) return { output: "chmod: usage: chmod MODE FILE (example: chmod 755 script.sh)", ok: false };
       const path = args[1];
-      const current = state.permissions[path] || { mode: "644", owner: "token:token" };
+      const previous = state.permissions[path];
+      const current = previous || { mode: "644", owner: "token:token" };
       state.permissions[path] = Object.assign({}, current, { mode: args[0] });
-      if (!saveState()) return { output: "chmod: could not save metadata to browser storage.", ok: false };
+      if (!saveState()) {
+        if (previous) state.permissions[path] = previous;
+        else delete state.permissions[path];
+        return { output: "chmod: could not save metadata to browser storage.", ok: false };
+      }
       return { output: "mode of '" + path + "' set to " + args[0] + " (simulated)", ok: true };
     }
     if (cmd === "chown") {
       if (args.length !== 2 || !/^[A-Za-z0-9_.:-]+$/.test(args[0])) return { output: "chown: usage: chown OWNER:GROUP FILE", ok: false };
       const path = args[1];
-      const current = state.permissions[path] || { mode: "644", owner: "token:token" };
+      const previous = state.permissions[path];
+      const current = previous || { mode: "644", owner: "token:token" };
       state.permissions[path] = Object.assign({}, current, { owner: args[0] });
-      if (!saveState()) return { output: "chown: could not save metadata to browser storage.", ok: false };
+      if (!saveState()) {
+        if (previous) state.permissions[path] = previous;
+        else delete state.permissions[path];
+        return { output: "chown: could not save metadata to browser storage.", ok: false };
+      }
       return { output: "owner of '" + path + "' set to " + args[0] + " (simulated)", ok: true };
     }
     return null;
