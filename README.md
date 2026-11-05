@@ -48,7 +48,7 @@ decrypt archive
 chmod 755 notes.txt
 chown token:token notes.txt
 perm notes.txt
-patch notes.txt snacks => backups
+patch notes.txt "stay strange" => "stay strange and keep snacks"
 locate diary
 which grep
 watch 2 system
