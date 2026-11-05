@@ -53,7 +53,10 @@
   let commandCount = 0;
   let tokenMood = "unbothered";
   let tabMatches = [];
-  let tabIndex = 0;
+  let tabIndex = -1;
+  let historySearchQuery = "";
+  let historySearchIndex = -1;
+  let historySearchActive = false;
   const aliases = Object.assign(Object.create(null), {
     ll: "ls -la",
     la: "ls -a",
@@ -268,14 +271,16 @@
   }
 
   function listDir(path, showAll, longFormat) {
-    const children = childrenOf(path);
+    const children = childrenOf(path).filter(([name]) => showAll || !name.startsWith("."));
     if (showAll) children.unshift([".", "dir"], ["..", "dir"]);
     if (!children.length) return "";
+    const now = new Date();
+    const stamp = now.toLocaleString(undefined, { month: "short", day: "2-digit", hour: "2-digit", minute: "2-digit", hour12: false });
     return children.map(([name, kind]) => {
       if (!longFormat) return kind === "dir" ? name + "/" : name;
-      const perms = kind === "dir" ? "drwxr-xr-x" : "-rw-r--r--";
       const size = kind === "dir" ? "4096" : String((files[path === "/" ? "/" + name : path + "/" + name] || "").length);
-      return perms + " 1 token token " + size.padStart(5, " ") + " Nov 05 16:27 " + (kind === "dir" ? name + "/" : name);
+      const perms = kind === "dir" ? "drwxr-xr-x" : "-rw-r--r--";
+      return perms + " 1 token token " + size.padStart(5, " ") + " " + stamp + " " + (kind === "dir" ? name + "/" : name);
     }).join("\n");
   }
 
@@ -330,7 +335,8 @@
     "  download FILE         download a virtual file",
     "",
     "SHELL",
-    "  history [-c]          show or clear command history",
+    "  history [-c] [-n N]   show, clear or limit command history",
+    "  Ctrl+R                search backward through command history",
     "  alias / unalias       create or remove command shortcuts",
     "  export / unset        manage session variables",
     "  echo / printf         print text",
@@ -373,7 +379,7 @@
     mkdir: "mkdir — create virtual directories\nUsage: mkdir [-p] DIRECTORY...",
     rm: "rm — remove virtual files\nUsage: rm [-r] PATH...\nProtected system directories cannot be removed.",
     token: "token — talk to the terminal's resident mascot\nUsage: token [hello|help|info|look|lore|diary|mood|stats|songs|quote|pet|feed|hug|boop|bite|poke|ask|joke|say|dance|scream]",
-    history: "history — print commands entered during this browser session\nUsage: history [-c] [-n COUNT]\nUse -c to clear history or -n to limit the number of entries.",
+    history: "history — print commands entered during this browser session\nUsage: history [-c] [-n COUNT]\nUse -c to clear history or -n to limit the number of entries. Press Ctrl+R for reverse search.",
     alias: "alias — create or list command shortcuts\nUsage: alias NAME=COMMAND\nExample: alias gs='grep -in' then use gs token FILE.",
     export: "export — set a session variable\nUsage: export NAME=value\nUse $NAME in later commands. Variables reset when the page reloads.",
     write: "write — create or replace a virtual text file\nUsage: write FILE TEXT...\nYou can also use output redirection: echo hello > FILE.",
@@ -1063,7 +1069,7 @@
   }
 
   function expandShellTokens(tokens) {
-    let expanded = expandVariables(tokens);
+    let expanded = tokens.slice();
     let depth = 0;
     while (expanded.length && Object.prototype.hasOwnProperty.call(aliases, expanded[0]) && depth < 8) {
       const replacement = tokenize(aliases[expanded[0]]);
@@ -1158,6 +1164,9 @@
     history.push(line);
     history = history.slice(-100);
     historyIndex = history.length;
+    historySearchActive = false;
+    historySearchQuery = "";
+    historySearchIndex = -1;
     commandCount += 1;
     persist();
     input.value = "";
@@ -1168,10 +1177,25 @@
   });
 
   input.addEventListener("keydown", (event) => {
-    if (event.key === "ArrowUp") {
+    if (event.key === "r" && event.ctrlKey) {
+      event.preventDefault();
+      if (!historySearchActive) {
+        historySearchQuery = input.value;
+        historySearchIndex = history.length;
+        historySearchActive = true;
+      }
+      let match = historySearchIndex - 1;
+      while (match >= 0 && !history[match].toLowerCase().includes(historySearchQuery.toLowerCase())) match -= 1;
+      if (match >= 0) {
+        historySearchIndex = match;
+        input.value = history[match];
+      } else print("reverse search: no earlier match", "muted");
+    } else if (event.key === "ArrowUp") {
+      historySearchActive = false;
       event.preventDefault();
       if (history.length) { historyIndex = Math.max(0, historyIndex - 1); input.value = history[historyIndex] || ""; }
     } else if (event.key === "ArrowDown") {
+      historySearchActive = false;
       event.preventDefault();
       historyIndex = Math.min(history.length, historyIndex + 1);
       input.value = history[historyIndex] || "";
@@ -1179,19 +1203,26 @@
       event.preventDefault();
       const raw = input.value;
       const partial = raw.split(/\s+/).pop() || "";
-      if (!tabMatches.length) { tabMatches = availableCompletions(partial, raw); tabIndex = 0; }
-      if (tabMatches.length === 1) input.value = raw.slice(0, raw.length - partial.length) + tabMatches[0] + (isDir(normalizePath(tabMatches[0])) ? "" : " ");
-      else if (tabMatches.length > 1) {
+      if (!tabMatches.length) { tabMatches = availableCompletions(partial, raw); tabIndex = -1; }
+      if (tabMatches.length === 1) {
+        input.value = raw.slice(0, raw.length - partial.length) + tabMatches[0] + (isDir(normalizePath(tabMatches[0])) ? "" : " ");
+        tabMatches = [];
+      } else if (tabMatches.length > 1) {
         const prefix = tabMatches.reduce((p, item) => {
           let i = 0; while (i < p.length && i < item.length && p[i] === item[i]) i += 1;
           return p.slice(0, i);
         });
-        if (prefix.length > partial.length) input.value = raw.slice(0, raw.length - partial.length) + prefix;
-        else print(tabMatches.join("    "), "muted");
+        if (prefix.length > partial.length && tabIndex < 0) {
+          input.value = raw.slice(0, raw.length - partial.length) + prefix;
+        } else {
+          tabIndex = (tabIndex + 1) % tabMatches.length;
+          input.value = raw.slice(0, raw.length - partial.length) + tabMatches[tabIndex];
+        }
       }
     } else if (event.key === "Escape") {
       input.value = "";
       tabMatches = [];
+      historySearchActive = false;
     } else if (event.key === "l" && event.ctrlKey) {
       event.preventDefault();
       clearScreen();
@@ -1201,6 +1232,7 @@
       input.value = "";
     } else {
       tabMatches = [];
+      historySearchActive = false;
     }
   });
 
