@@ -84,6 +84,15 @@
         if (Array.isArray(entry) && typeof entry[0] === "string" && typeof entry[1] === "string" && !Object.prototype.hasOwnProperty.call(initialFiles, entry[0])) files[entry[0]] = entry[1];
       });
       (saved.dirs || []).forEach((dir) => { if (typeof dir === "string") dirs.add(dir); });
+      (saved.overrides || []).forEach((entry) => {
+        if (Array.isArray(entry) && typeof entry[0] === "string" && typeof entry[1] === "string" && Object.prototype.hasOwnProperty.call(initialFiles, entry[0])) files[entry[0]] = entry[1];
+      });
+      (saved.deletedFiles || []).forEach((path) => {
+        if (typeof path === "string" && Object.prototype.hasOwnProperty.call(initialFiles, path)) delete files[path];
+      });
+      (saved.deletedDirs || []).forEach((path) => {
+        if (typeof path === "string") dirs.delete(path);
+      });
     }
     const savedHistory = JSON.parse(localStorage.getItem(historyKey) || "[]");
     if (Array.isArray(savedHistory)) history = savedHistory.filter((x) => typeof x === "string").slice(-100);
@@ -91,9 +100,13 @@
 
   function persist() {
     try {
+      const baseDirs = ["/", "/home", "/home/token", "/etc", "/var", "/var/log", "/usr", "/usr/share", "/usr/share/femtanyl", "/tmp"];
       const customFiles = Object.keys(files).filter((path) => !Object.prototype.hasOwnProperty.call(initialFiles, path)).map((path) => [path, files[path]]);
-      const customDirs = Array.from(dirs).filter((path) => !["/", "/home", "/home/token", "/etc", "/var", "/var/log", "/usr", "/usr/share", "/usr/share/femtanyl", "/tmp"].includes(path));
-      localStorage.setItem(storageKey, JSON.stringify({ files: customFiles, dirs: customDirs }));
+      const overrides = Object.keys(initialFiles).filter((path) => Object.prototype.hasOwnProperty.call(files, path) && files[path] !== initialFiles[path]).map((path) => [path, files[path]]);
+      const deletedFiles = Object.keys(initialFiles).filter((path) => !Object.prototype.hasOwnProperty.call(files, path));
+      const customDirs = Array.from(dirs).filter((path) => !baseDirs.includes(path));
+      const deletedDirs = baseDirs.filter((path) => !dirs.has(path));
+      localStorage.setItem(storageKey, JSON.stringify({ files: customFiles, dirs: customDirs, overrides: overrides, deletedFiles: deletedFiles, deletedDirs: deletedDirs }));
       localStorage.setItem(historyKey, JSON.stringify(history.slice(-100)));
     } catch (_) {}
   }
