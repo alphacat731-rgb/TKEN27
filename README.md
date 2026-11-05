@@ -64,13 +64,13 @@ The expansion pack is a local browser feature, not a network download. Browser s
 
 ## Language packs
 
-Run \`language\` to open the language pack manager, or use the terminal commands:
+Run `language` to open the language pack manager, or use the terminal commands:
 
-- \`language list\` — list available packs and installation state
-- \`language install es\` — install Spanish (also available: \`fr\`, \`de\`, \`ja\`)
-- \`language use es\` — activate an installed pack; \`language use en\` returns to English
-- \`language status\` — show the active language and installed packs
-- \`language remove es\` — uninstall a language pack
+- `language list` — list available packs and installation state
+- `language install es` — install Spanish (also available: `fr`, `de`, `ja`)
+- `language use es` — activate an installed pack; `language use en` returns to English
+- `language status` — show the active language and installed packs
+- `language remove es` — uninstall a language pack
 
 English is built in. Spanish, French, German, and Japanese are included as offline packs with a small installer UI. Installed packs and the active language persist in browser local storage across refreshes and reopening the same site in the same browser profile. Removing the active pack switches the interface back to English. Clearing browser site data removes the saved pack state.
 
