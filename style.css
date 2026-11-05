@@ -213,3 +213,73 @@ button { color: inherit; }
   .pack-dialog h2 { font-size: 13px; }
   .pack-log { max-height: 120px; }
 }
+
+/* Temporary phone layout, enabled only by the "mobile" shell command */
+body.mobile-mode .terminal-shell {
+  width: 100vw;
+  height: 100vh;
+  height: 100dvh;
+  min-height: 0;
+  margin: 0;
+  border: 0;
+  border-radius: 0;
+}
+body.mobile-mode .terminal-header {
+  height: 36px;
+  min-height: 36px;
+  gap: 9px;
+  padding: 0 10px;
+}
+body.mobile-mode .header-title {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 9px;
+}
+body.mobile-mode .header-status {
+  gap: 0;
+  font-size: 0;
+}
+body.mobile-mode .terminal-screen {
+  padding: 13px 11px calc(14px + env(safe-area-inset-bottom));
+}
+body.mobile-mode .terminal-output {
+  font-size: 12px;
+  line-height: 1.6;
+}
+body.mobile-mode .command-line {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: stretch;
+  gap: 5px;
+  margin-top: 12px;
+  padding-top: 10px;
+  border-top: 1px solid var(--line);
+}
+body.mobile-mode .prompt {
+  width: 100%;
+  font-size: 11px;
+}
+body.mobile-mode #commandInput {
+  width: 100%;
+  min-height: 38px;
+  padding: 7px 0;
+  font-size: 16px;
+  line-height: 1.4;
+}
+body.mobile-mode .terminal-footer {
+  height: auto;
+  min-height: 32px;
+  padding: 6px 10px max(6px, env(safe-area-inset-bottom));
+  gap: 8px;
+  font-size: 8px;
+}
+body.mobile-mode .terminal-footer span:first-child,
+body.mobile-mode .terminal-footer span:last-child {
+  display: none;
+}
+body.mobile-mode .pack-dialog {
+  width: min(560px, calc(100vw - 20px));
+  max-height: calc(100dvh - 20px);
+}
