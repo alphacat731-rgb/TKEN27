@@ -38,10 +38,20 @@ button { color: inherit; }
 .boot-foot button { border: 0; padding: 0; background: none; color: #82777e; cursor: pointer; text-transform: lowercase; }
 .boot-foot button:hover { color: var(--accent); }
 .terminal-shell {
-  width: min(1050px, calc(100vw - 36px)); height: min(760px, calc(100vh - 36px));
-  min-height: 300px; margin: 18px auto; border: 1px solid #393039; background: var(--panel);
-  display: flex; flex-direction: column; box-shadow: 0 20px 70px rgba(0,0,0,.48);
-  opacity: 1; transform: translateY(0); transition: opacity .16s steps(3, end), transform .16s steps(3, end);
+  width: 100vw;
+  height: 100vh;
+  height: 100dvh;
+  min-height: 0;
+  margin: 0;
+  border: 0;
+  border-radius: 0;
+  background: var(--panel);
+  display: flex;
+  flex-direction: column;
+  box-shadow: none;
+  opacity: 1;
+  transform: translateY(0);
+  transition: opacity .16s steps(3, end), transform .16s steps(3, end);
 }
 .terminal-shell.hidden { opacity: 0; transform: translateY(7px); visibility: hidden; }
 .terminal-header { height: 38px; min-height: 38px; display: flex; align-items: center; gap: 14px; padding: 0 13px; border-bottom: 1px solid var(--line); color: var(--dim); font-size: 10px; letter-spacing: .1em; }
