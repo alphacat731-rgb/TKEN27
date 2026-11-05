@@ -8,14 +8,14 @@ Open `index.html` in a browser, or enable GitHub Pages for the repository (deplo
 
 ## Features
 
-- Terminal boot sequence, command prompt, clock, command history, arrow-key recall and Tab completion
+- Terminal boot sequence, clock, command history, arrow-key recall, Ctrl+R reverse search, path-aware cycling Tab completion and a 1,600-line output cap
 - Virtual filesystem with `ls`, `cd`, `cat`, `mkdir`, `touch`, `write`, `append`, `rm`, `cp`, `mv`, `tree`, `find` and more
 - Text tools: `grep` (including inverted matches), `head`, `tail`, `tac`, `nl`, `fold`, `wc`, `sort`, `uniq`, `paste`, `cut`, `tr`, `rev`, `diff`, `base64`, `hash`, `json`, `rot13`, `replace`, `calc`, `random` and `uuid`
 - Shell conveniences: functional aliases, quoted and braced variables, dynamic `PWD`/`OLDPWD`, reverse history search with Ctrl+R, cycling Tab completion, pipes, redirects and command chaining
 - Stopwatch with laps via `timer`, and a browser download command for virtual files
 - Token text interactions: `token hello`, `token ask`, `token say`, `token diary`, `token pet`, `token hug`, `token boop`, `token roll`, `token flip` and more
 - Femtanyl track index, hidden diary easter egg and simulated system commands
-- Saved virtual files and command history using browser local storage
+- Persisted virtual filesystem changes (new files, edits and deletions) plus command history using browser local storage
 - Classic monospace look, reduced-motion support and no spoken audio
 
 ## Try these
