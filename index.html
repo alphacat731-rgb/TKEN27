@@ -42,6 +42,20 @@
     </footer>
   </main>
 
+  <section class="crash-screen" id="crashScreen" role="alertdialog" aria-modal="true" aria-labelledby="crashTitle" hidden>
+    <div class="crash-content">
+      <div class="crash-symbol">:(</div>
+      <h1 id="crashTitle">TKEN27 HAS STOPPED</h1>
+      <p>The system encountered a problem and needs to restart.</p>
+      <div class="crash-details">
+        <div>STOP CODE: TOKEN_EXCEPTION</div>
+        <div>DETAILS: SIMULATED TEST CRASH</div>
+      </div>
+      <p class="crash-note">No real data was damaged. This is only a terminal simulation.</p>
+      <button id="restartSystem" type="button">restart system</button>
+    </div>
+  </section>
+
   <section class="pack-modal" id="packModal" role="dialog" aria-modal="true" aria-labelledby="packTitle" hidden>
     <div class="pack-dialog">
       <div class="pack-dialog-top">
