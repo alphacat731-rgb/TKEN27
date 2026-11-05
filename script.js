@@ -360,9 +360,12 @@
     "  token lore / diary    lore and a hidden note",
     "  token mood / stats    current mood and session stats",
     "  token songs / quote   music and random thoughts",
-    "  token pet / feed      try being nice",
-    "  token hug / boop      interact with me",
-    "  token bite / poke     maybe don't",
+    "  token pet / feed      attempt diplomacy",
+    "  token hug / boop      try your luck",
+    "  token bite / poke     consequences",
+    "  token highfive        slap hands",
+    "  token choose A B      let me pick one",
+    "  token roll / flip     random results",
     "  token ask / joke      ask me something",
     "  token say TEXT        make me type something",
     "  token dance / scream  chaos",
@@ -378,7 +381,7 @@
     grep: "grep — search for matching lines\nUsage: grep [-i] [-n] [-v] PATTERN [FILE...]\nWith no file, grep reads piped input.",
     mkdir: "mkdir — create virtual directories\nUsage: mkdir [-p] DIRECTORY...",
     rm: "rm — remove virtual files\nUsage: rm [-r] PATH...\nProtected system directories cannot be removed.",
-    token: "token — talk to the terminal's resident mascot\nUsage: token [hello|help|info|look|lore|diary|mood|stats|songs|quote|pet|feed|hug|boop|bite|poke|ask|joke|say|dance|scream]",
+    token: "token — text interactions with the terminal's resident mascot\nUsage: token [hello|help|info|look|lore|diary|mood|stats|songs|quote|ask|joke|say|pet|feed|hug|boop|highfive|bite|poke|choose|roll|flip|dance|scream|ping]",
     history: "history — print commands entered during this browser session\nUsage: history [-c] [-n COUNT]\nUse -c to clear history or -n to limit the number of entries. Press Ctrl+R for reverse search.",
     alias: "alias — create or list command shortcuts\nUsage: alias NAME=COMMAND\nExample: alias gs='grep -in' then use gs token FILE.",
     export: "export — set a session variable\nUsage: export NAME=value\nUse $NAME in later commands. Variables reset when the page reloads.",
@@ -577,7 +580,7 @@
       const tokens = expression.match(/\d+(?:\.\d+)?|[()+\-*/%^]/g) || [];
       if (tokens.join("") !== expression) return fail("calc: only numbers, parentheses and + - * / % ^ are supported");
       const output = [], operators = [];
-      const precedence = { "+": 1, "-": 1, "*": 2, "/": 2, "%": 2, "^": 3, "u+": 4, "u-": 4 };
+      const precedence = { "+": 1, "-": 1, "*": 2, "/": 2, "%": 2, "^": 3, "u+": 2.5, "u-": 2.5 };
       let expectsValue = true;
       for (const token of tokens) {
         if (/^\d/.test(token)) { output.push(Number(token)); expectsValue = false; continue; }
@@ -592,7 +595,8 @@
         while (operators.length && operators[operators.length - 1] !== "(") {
           const top = operators[operators.length - 1];
           const rightAssociative = op === "^" || op === "u+" || op === "u-";
-          if (precedence[top] > precedence[op] || (!rightAssociative && precedence[top] === precedence[op])) output.push(operators.pop());
+          const deferExponentForUnary = (op === "u+" || op === "u-") && top === "^";
+          if (!deferExponentForUnary && (precedence[top] > precedence[op] || (!rightAssociative && precedence[top] === precedence[op]))) output.push(operators.pop());
           else break;
         }
         operators.push(op); expectsValue = true;
@@ -746,12 +750,13 @@
       return pass("");
     }
     if (cmd === "tree") {
-      const root = normalizePath(a[0] || cwd);
+      const showAll = a.includes("-a");
+      const root = normalizePath(a.find((item) => !item.startsWith("-")) || cwd);
       if (!isDir(root)) return fail("tree: " + root + ": no such directory");
       const lines = [root];
       function walk(path, prefix, depth) {
         if (depth > 8) return;
-        const children = childrenOf(path);
+        const children = childrenOf(path).filter(([name]) => showAll || !name.startsWith("."));
         children.forEach(([name, kind], index) => {
           const last = index === children.length - 1;
           lines.push(prefix + (last ? "└── " : "├── ") + name + (kind === "dir" ? "/" : ""));
@@ -912,7 +917,7 @@
       const decode = a.includes("-d") || a.includes("--decode");
       const name = a.find((x) => !x.startsWith("-"));
       const content = name ? readFile(name) : stdin;
-      if (content == null || content === "") return fail("base64: missing input");
+      if (content == null || (content === "" && !name)) return fail("base64: missing input");
       try {
         if (!decode) {
           const bytes = new TextEncoder().encode(String(content));
