@@ -17,6 +17,7 @@ Open `index.html` in a browser, or enable GitHub Pages for the repository (deplo
 - Persisted virtual filesystem changes and command history using browser local storage
 - Classic monospace look, reduced-motion support and no spoken audio
 - Temporary phone-friendly layout via `mobile` / `mobile on`, restored with `desktop` or `mobile off`; it resets on refresh
+- Simple simulated crash screen via `crash-test`, with a restart button that replays the boot sequence
 
 ## Optional expansion pack
 
