@@ -1281,6 +1281,7 @@
   terminalShell.addEventListener("click", () => input.focus());
   $("skipBoot").addEventListener("click", () => { window.clearInterval(bootTimer); bootIndex = bootLines.length; bootProgress.style.width = "100%"; showTerminal(); });
   function updateClock() { clock.textContent = new Date().toLocaleTimeString([], { hour12: false }); }
+  window.TKEN27Shell = { dispatch: dispatch };
   window.setInterval(updateClock, 1000);
   boot();
 })();
