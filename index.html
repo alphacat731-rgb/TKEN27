@@ -1,0 +1,50 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#09090b">
+  <meta name="description" content="TKEN27 — a small Token-themed terminal environment.">
+  <title>TKEN27 :: token shell</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div class="crt-grain" aria-hidden="true"></div>
+
+  <section class="boot-screen" id="bootScreen" aria-label="System boot">
+    <div class="boot-content">
+      <pre class="boot-mark" aria-hidden="true">  /\_/\\
+ ( o.o )
+  &gt; ^ &lt;</pre>
+      <div class="boot-name">TKEN27 SYSTEM BOOT</div>
+      <div class="boot-log" id="bootLog" aria-live="polite"></div>
+      <div class="boot-progress"><span id="bootProgress"></span></div>
+      <div class="boot-foot"><span>BUILD 27.11-TKN</span><button id="skipBoot" type="button">skip boot</button></div>
+    </div>
+  </section>
+
+  <main class="terminal-shell hidden" id="terminalShell">
+    <header class="terminal-header">
+      <div class="window-lights" aria-hidden="true"><i></i><i></i><i></i></div>
+      <div class="header-title">TKEN27 <span>/</span> TOKEN SHELL</div>
+      <div class="header-status"><span class="status-dot"></span> LOCAL SESSION</div>
+    </header>
+
+    <section class="terminal-screen" id="terminalScreen" aria-label="Terminal">
+      <div class="terminal-output" id="terminalOutput" aria-live="polite"></div>
+      <form class="command-line" id="commandForm" autocomplete="off">
+        <label class="prompt" id="promptLabel" for="commandInput">token@tken27:~$</label>
+        <input id="commandInput" name="command" type="text" spellcheck="false" autocapitalize="off" autocomplete="off" aria-label="Terminal command" autofocus>
+      </form>
+    </section>
+
+    <footer class="terminal-footer">
+      <span>type <b>help</b> for commands</span>
+      <span id="clock">--:--:--</span>
+      <span>SIMULATED USERSPACE <b class="footer-led">●</b></span>
+    </footer>
+  </main>
+
+  <script src="script.js"></script>
+</body>
+</html>
