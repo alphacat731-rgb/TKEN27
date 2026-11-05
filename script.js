@@ -352,6 +352,8 @@
     "  replace FILE OLD NEW  replace literal text in a file",
     "  timer start/stop/lap  run a simple stopwatch",
     "  download FILE         download a virtual file",
+    "  mobile [on|off|status] switch to a temporary phone-friendly layout",
+    "  desktop               restore the normal terminal layout",
     "",
     "SHELL",
     "  history [-c] [-n N]   show, clear or limit command history",
@@ -416,6 +418,8 @@
     replace: "replace — replace literal text in a virtual file\nUsage: replace FILE OLD_TEXT NEW_TEXT.",
     timer: "timer — operate a session stopwatch\nUsage: timer start|stop|status|reset|lap|laps.",
     download: "download — save one virtual file to your device\nUsage: download FILE.",
+    mobile: "mobile — temporarily switch the terminal to a phone-friendly layout\nUsage: mobile [on|off|status]. The setting lasts only until this page is refreshed.",
+    desktop: "desktop — restore the normal terminal layout\nUsage: desktop. This only changes the current page session.",
     help: "help — show the command index\nUsage: help [COMMAND]"
   };
 
@@ -428,6 +432,23 @@
     const pass = (text) => ({ output: text == null ? "" : String(text), ok: true });
     const resolveArgs = (list) => list.map((p) => normalizePath(p));
 
+    if (cmd === "mobile") {
+      const action = (a[0] || "on").toLowerCase();
+      if (action === "status") return pass(document.body.classList.contains("mobile-mode") ? "phone-friendly layout is active (temporary)." : "phone-friendly layout is inactive.");
+      if (action === "on" || action === "enable") {
+        document.body.classList.add("mobile-mode");
+        return pass("phone-friendly layout enabled. run 'desktop' or 'mobile off' to restore the normal layout.");
+      }
+      if (action === "off" || action === "disable") {
+        document.body.classList.remove("mobile-mode");
+        return pass("phone-friendly layout disabled. normal layout restored.");
+      }
+      return fail("mobile: use mobile [on|off|status]");
+    }
+    if (cmd === "desktop") {
+      document.body.classList.remove("mobile-mode");
+      return pass("normal terminal layout restored.");
+    }
     if (cmd === "help" || cmd === "?") {
       if (a[0] === "token") return pass(manuals.token);
       if (a[0] && manuals[a[0]]) return pass(manuals[a[0]]);
@@ -1191,7 +1212,7 @@
       return Object.keys(manuals).filter((name) => name.startsWith(partial));
     }
 
-    const commandNames = ["help","clear","ls","cd","pwd","cat","less","more","echo","printf","touch","write","append","mkdir","rm","rmdir","cp","mv","tree","find","locate","patch","head","tail","tac","nl","fold","grep","wc","sort","uniq","paste","cut","tr","rev","diff","base64","hash","calc","random","uuid","json","rot13","replace","timer","download","history","alias","unalias","export","unset","man","which","type","whoami","id","hostname","uname","date","cal","uptime","ps","top","free","df","du","env","printenv","neofetch","fortune","cowsay","token","femtanyl","about","version","reboot","exit","ping","ifconfig","seq","pack","visualizer","decrypt","chmod","chown","perm","watch","jobs","kill"];
+    const commandNames = ["help","clear","ls","cd","pwd","cat","less","more","echo","printf","touch","write","append","mkdir","rm","rmdir","cp","mv","tree","find","locate","patch","head","tail","tac","nl","fold","grep","wc","sort","uniq","paste","cut","tr","rev","diff","base64","hash","calc","random","uuid","json","rot13","replace","timer","download","mobile","desktop","history","alias","unalias","export","unset","man","which","type","whoami","id","hostname","uname","date","cal","uptime","ps","top","free","df","du","env","printenv","neofetch","fortune","cowsay","token","femtanyl","about","version","reboot","exit","ping","ifconfig","seq","pack","visualizer","decrypt","chmod","chown","perm","watch","jobs","kill"];
     if (words.length <= 1 && !trailingSpace) return commandNames.filter((name) => name.startsWith(partial));
 
     const pathCommands = ["cd","ls","cat","less","more","type","touch","write","append","rm","rmdir","cp","mv","tree","find","locate","patch","chmod","chown","perm","head","tail","nl","fold","uniq","rev","cut","file","stat","du","replace","download","base64","hash","json","rot13"];
