@@ -801,7 +801,7 @@
       const words = String(content).trim() ? String(content).trim().split(/\s+/).length : 0;
       const bytes = new TextEncoder().encode(String(content)).length;
       const flags = a.filter((x) => x.startsWith("-")).join("");
-      return pass((flags.includes("l") ? lines + " " : "") + (flags.includes("w") ? words + " " : "") + (flags.includes("c") ? bytes + " " : (!flags ? lines + " " + words + " " + bytes : "")) + (names[0] || ""));
+      return pass(((flags.includes("l") ? lines + " " : "") + (flags.includes("w") ? words + " " : "") + (flags.includes("c") ? bytes + " " : (!flags ? lines + " " + words + " " + bytes : "")) + (names[0] || "")).trim());
     }
     if (cmd === "grep") {
       const flags = a.filter((x) => x.startsWith("-")).join("");
@@ -1145,20 +1145,38 @@
   }
 
   function availableCompletions(partial, raw) {
-    const words = (raw || "").trim().split(/\s+/);
-    if (words[0] === "token" && (words.length === 2 || /\s$/.test(raw || ""))) {
+    const text = raw || "";
+    const words = text.trim().split(/\s+/);
+    const command = words[0] || "";
+    const trailingSpace = /\s$/.test(text);
+
+    if (command === "token" && (words.length === 2 || trailingSpace)) {
       return ["hello","hi","help","info","look","lore","diary","secret","mood","stats","songs","quote","ask","joke","say","pet","feed","hug","boop","highfive","bite","poke","dance","scream","roll","flip","choose","ping","creator"].filter((name) => name.startsWith(partial));
     }
-    if (words[0] === "man" && words.length === 2) return Object.keys(manuals).filter((name) => name.startsWith(partial));
+    if (command === "timer" && (words.length === 2 || trailingSpace)) {
+      return ["start","stop","status","reset","lap","laps"].filter((name) => name.startsWith(partial));
+    }
+    if (["man","help"].includes(command) && (words.length === 2 || trailingSpace)) {
+      return Object.keys(manuals).filter((name) => name.startsWith(partial));
+    }
+
     const commandNames = ["help","clear","ls","cd","pwd","cat","less","more","echo","printf","touch","write","append","mkdir","rm","rmdir","cp","mv","tree","find","head","tail","tac","nl","fold","grep","wc","sort","uniq","paste","cut","tr","rev","diff","base64","hash","calc","random","uuid","json","rot13","replace","timer","download","history","alias","unalias","export","unset","man","which","type","whoami","id","hostname","uname","date","cal","uptime","ps","top","free","df","du","env","printenv","neofetch","fortune","cowsay","token","femtanyl","about","version","reboot","exit","ping","ifconfig","seq"];
+    if (words.length <= 1 && !trailingSpace) return commandNames.filter((name) => name.startsWith(partial));
+
+    const pathCommands = ["cd","ls","cat","less","more","type","touch","write","append","rm","rmdir","cp","mv","tree","find","head","tail","nl","fold","uniq","rev","cut","file","stat","du","replace","download","base64","hash","json","rot13"];
     const pathPart = partial.includes("/") || partial.startsWith("~");
-    if (!pathPart) return commandNames.filter((name) => name.startsWith(partial));
-    const slash = partial.lastIndexOf("/");
-    const dirText = slash >= 0 ? partial.slice(0, slash + 1) : "";
-    const nameText = slash >= 0 ? partial.slice(slash + 1) : partial;
-    const dir = normalizePath(dirText || ".");
-    if (!isDir(dir)) return [];
-    return childrenOf(dir).map(([name, kind]) => dirText + name + (kind === "dir" ? "/" : "")).filter((name) => name.slice(name.lastIndexOf("/") + 1).startsWith(nameText));
+    const wantsPath = pathCommands.includes(command) && (words.length >= 2 || trailingSpace);
+    if (pathPart || wantsPath) {
+      const slash = partial.lastIndexOf("/");
+      const dirText = slash >= 0 ? partial.slice(0, slash + 1) : "";
+      const nameText = slash >= 0 ? partial.slice(slash + 1) : partial;
+      const dir = normalizePath(dirText || ".");
+      if (!isDir(dir)) return [];
+      return childrenOf(dir)
+        .filter(([name]) => name.startsWith(nameText) && (!name.startsWith(".") || nameText.startsWith(".")))
+        .map(([name, kind]) => dirText + name + (kind === "dir" ? "/" : ""));
+    }
+    return commandNames.filter((name) => name.startsWith(partial));
   }
 
   commandForm.addEventListener("submit", (event) => {
